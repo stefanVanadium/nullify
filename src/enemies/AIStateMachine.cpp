@@ -171,15 +171,13 @@ void AIStateMachine::update(uint32_t       enemyId,
             }
         } else {
             body->SetLinearVelocity({0.f, body->GetLinearVelocity().y});
-            // Attack
+            // Fire projectile bullet toward player
             if (ai.hasLOS && ai.attackTimer <= 0.f) {
                 ai.attackTimer = EnemyConfig::SCOUT_ATTACK_INTERVAL;
-                uint32_t pid = playerEntityId;
-                if (world.hasComponent<Health>(pid)) {
-                    auto& hp = world.getComponent<Health>(pid);
-                    hp.current = std::max(0, hp.current - EnemyConfig::SCOUT_ATTACK_DAMAGE);
-                    EventBus::emit(PlayerDamagedEvent{ pid, EnemyConfig::SCOUT_ATTACK_DAMAGE });
-                }
+                float dx = px - ex, dy = py - ey;
+                float len = std::sqrt(dx*dx + dy*dy);
+                if (len > 0.1f) { dx /= len; dy /= len; }
+                EventBus::emit(EnemyFireEvent{ enemyId, ex, ey, dx, dy });
             }
         }
         break;

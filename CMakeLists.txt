@@ -68,6 +68,8 @@ set(SOURCES
     src/rendering/SpriteBatch.cpp
     src/rendering/ShaderManager.cpp
     src/rendering/ParallaxSystem.cpp
+    src/rendering/ParticleSystem.cpp
+    src/player/HackSystem.cpp
     src/enemies/NavMesh.cpp
     src/enemies/Pathfinding.cpp
     src/enemies/AIStateMachine.cpp

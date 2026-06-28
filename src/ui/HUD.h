@@ -2,7 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include "ecs/Components.h"
 
-// Draws HP bar, ammo counter, and alert level indicator in screen space.
+// Draws HP bar, ammo counter, alert level, and hack overlay in screen space.
 class HUD {
 public:
     // Returns true if font loaded; HUD still renders shapes without it.
@@ -13,6 +13,8 @@ public:
                 const Weapon&     playerWeapon,
                 int               alertLevel);
 
+    void renderHackOverlay(sf::RenderWindow& window, float progress);
+
 private:
     sf::Font            m_font;
     bool                m_fontLoaded = false;
@@ -20,4 +22,7 @@ private:
     sf::RectangleShape  m_hpBarFill;
     sf::Text            m_ammoText;
     sf::Text            m_alertText;
+    sf::Text            m_hackText;
+    sf::RectangleShape  m_hackBarBg;
+    sf::RectangleShape  m_hackBarFill;
 };

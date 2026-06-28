@@ -21,12 +21,17 @@ struct CoverObject {
     float x = 0.f, y = 0.f, w = 0.f, h = 0.f;
 };
 
+struct HackableSpawnData {
+    float x = 0.f, y = 0.f;
+};
+
 struct LevelData {
-    PlayerSpawn                  playerSpawn;
-    std::vector<EnemySpawnData>  enemies;
-    std::vector<CoverObject>     coverObjects;
+    PlayerSpawn                    playerSpawn;
+    std::vector<EnemySpawnData>    enemies;
+    std::vector<CoverObject>       coverObjects;
+    std::vector<HackableSpawnData> hackables;
     // Collision data retained for NavMesh building
-    std::vector<std::vector<int>> collision;
+    std::vector<std::vector<int>>  collision;
     int width    = 0;
     int height   = 0;
     int tileSize = 32;

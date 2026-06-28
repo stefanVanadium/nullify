@@ -12,6 +12,15 @@ namespace EnemyConfig {
     constexpr float SCOUT_ATTACK_INTERVAL = 1.2f;  // seconds between shots
     constexpr int   SCOUT_ATTACK_DAMAGE  = 10;
 
+    // SCOUT projectile bullet
+    constexpr float SCOUT_BULLET_SPEED   = 300.0f;   // pixels/sec
+    constexpr float SCOUT_BULLET_MAX_DIST = 600.0f;  // pixels
+    constexpr float SCOUT_BULLET_W       = 6.0f;
+    constexpr float SCOUT_BULLET_H       = 3.0f;
+
+    // Max enemy bullets pooled
+    constexpr size_t MAX_ENEMY_BULLETS   = 256;
+
     // State durations
     constexpr float ALERT_DURATION       = 5.0f;   // seconds in ALERT before back to PATROL
     constexpr float SEARCH_DURATION      = 15.0f;  // seconds in SEARCH before back to PATROL

@@ -49,6 +49,20 @@ struct PlayerDamagedEvent {
     int      damage;
 };
 
+struct EnemyFireEvent {
+    uint32_t enemyId;
+    float    fromX, fromY;
+    float    dirX,  dirY;
+};
+
+struct HackActivatedEvent {
+    uint32_t targetId;
+};
+
+struct HackFailedEvent {
+    uint32_t targetId;
+};
+
 // ---- Bus implementation ----
 
 class EventBus {

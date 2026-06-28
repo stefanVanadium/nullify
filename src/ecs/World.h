@@ -20,7 +20,8 @@ enum class ComponentType : uint8_t {
     AIState      = 8,
     WaypointPath = 9,
     Weapon       = 10,
-    COUNT        = 11
+    HackableTag  = 11,
+    COUNT        = 12
 };
 
 class World {
@@ -59,6 +60,7 @@ private:
     std::array<AIState,      MAX_ENTITIES> m_aiStates{};
     std::array<WaypointPath, MAX_ENTITIES> m_waypointPaths{};
     std::array<Weapon,       MAX_ENTITIES> m_weapons{};
+    std::array<HackableTag,  MAX_ENTITIES> m_hackableTags{};
 
     size_t   m_aliveCount = 0;
     uint32_t m_nextId     = 0;
@@ -77,6 +79,7 @@ template<> inline void World::addComponent<EnemyTag>(uint32_t id, EnemyTag&& c) 
 template<> inline void World::addComponent<AIState>(uint32_t id, AIState&& c)         { m_aiStates[id]      = std::move(c); m_mask[id].set(CT(ComponentType::AIState)); }
 template<> inline void World::addComponent<WaypointPath>(uint32_t id, WaypointPath&& c){ m_waypointPaths[id] = std::move(c); m_mask[id].set(CT(ComponentType::WaypointPath)); }
 template<> inline void World::addComponent<Weapon>(uint32_t id, Weapon&& c)           { m_weapons[id]       = std::move(c); m_mask[id].set(CT(ComponentType::Weapon)); }
+template<> inline void World::addComponent<HackableTag>(uint32_t id, HackableTag&& c) { m_hackableTags[id]  = std::move(c); m_mask[id].set(CT(ComponentType::HackableTag)); }
 
 // ---------- getComponent specializations ----------
 
@@ -91,6 +94,7 @@ template<> inline EnemyTag&     World::getComponent<EnemyTag>(uint32_t id)     {
 template<> inline AIState&      World::getComponent<AIState>(uint32_t id)      { return m_aiStates[id]; }
 template<> inline WaypointPath& World::getComponent<WaypointPath>(uint32_t id) { return m_waypointPaths[id]; }
 template<> inline Weapon&       World::getComponent<Weapon>(uint32_t id)       { return m_weapons[id]; }
+template<> inline HackableTag&  World::getComponent<HackableTag>(uint32_t id)  { return m_hackableTags[id]; }
 
 template<> inline const Transform&    World::getComponent<Transform>(uint32_t id)    const { return m_transforms[id]; }
 template<> inline const Velocity&     World::getComponent<Velocity>(uint32_t id)     const { return m_velocities[id]; }
@@ -115,6 +119,7 @@ template<> inline bool World::hasComponent<EnemyTag>(uint32_t id)     const { re
 template<> inline bool World::hasComponent<AIState>(uint32_t id)      const { return m_mask[id].test(CT(ComponentType::AIState)); }
 template<> inline bool World::hasComponent<WaypointPath>(uint32_t id) const { return m_mask[id].test(CT(ComponentType::WaypointPath)); }
 template<> inline bool World::hasComponent<Weapon>(uint32_t id)       const { return m_mask[id].test(CT(ComponentType::Weapon)); }
+template<> inline bool World::hasComponent<HackableTag>(uint32_t id)  const { return m_mask[id].test(CT(ComponentType::HackableTag)); }
 
 // ---------- getComponents specializations ----------
 

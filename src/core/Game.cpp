@@ -4,12 +4,14 @@
 #include "player/Player.h"
 #include "player/PlayerStateMachine.h"
 #include "player/WeaponSystem.h"
+#include "player/HackSystem.h"
 #include "world/TileMap.h"
 #include "world/LevelLoader.h"
 #include "world/Camera.h"
 #include "rendering/Renderer.h"
 #include "rendering/ParallaxSystem.h"
 #include "rendering/ShaderManager.h"
+#include "rendering/ParticleSystem.h"
 #include "enemies/EnemyManager.h"
 #include "ui/HUD.h"
 #include "ecs/Components.h"
@@ -28,12 +30,19 @@ public:
         , m_weapon(m_world, m_physics)
         , m_camera(m_world)
         , m_enemyMgr(m_world, m_physics)
-    {}
+    {
+        m_damagedHandle = EventBus::on<PlayerDamagedEvent>([this](const PlayerDamagedEvent&) {
+            m_caTimer = 0.8f;
+        });
+    }
+
+    ~PlayState() {
+        EventBus::unsubscribe<PlayerDamagedEvent>(m_damagedHandle);
+    }
 
     void enter() override {
         sf::Vector2u winSize = m_window.getSize();
 
-        // Load level — builds tile vertex array into m_tileMap
         LevelLoader loader;
         auto levelData = loader.load("assets/levels/1-1.json",
                                      m_world, m_physics, m_tileMap);
@@ -41,7 +50,6 @@ public:
 
         m_player.spawn(levelData->playerSpawn.x, levelData->playerSpawn.y);
 
-        // Build navmesh + spawn enemies
         m_enemyMgr.buildNavMesh(levelData->collision,
                                  levelData->width, levelData->height, levelData->tileSize);
         for (const auto& es : levelData->enemies)
@@ -61,13 +69,21 @@ public:
     void exit() override {}
 
     void update(float dt) override {
+        m_gameTime += dt;
+
+        // Decay chromatic aberration timer
+        if (m_caTimer > 0.f) {
+            m_caTimer -= dt;
+            if (m_caTimer < 0.f) m_caTimer = 0.f;
+        }
+
         m_psm.update(dt);
         m_player.update(dt, m_input);
         m_physics.update(dt);
         m_camera.update(dt);
         m_enemyMgr.update(dt);
+        m_particles.update(dt);
 
-        // Weapon: fire on mouse click
         uint32_t pid = m_world.findPlayer();
         if (pid != static_cast<uint32_t>(MAX_ENTITIES)) {
             if (m_input.isHeld(Action::Fire)) {
@@ -78,6 +94,7 @@ public:
                     m_weapon.fire(playerCenter, mouseW, pid);
                 }
             }
+            m_hackSystem.update(dt, pid, m_world, m_input);
         }
         m_weapon.update(dt);
     }
@@ -94,11 +111,16 @@ public:
             hpRatio = static_cast<float>(hp.current) / static_cast<float>(std::max(hp.max, 1));
         }
 
+        RenderEffects fx;
+        fx.caIntensity   = (m_caTimer > 0.f) ? (m_caTimer / 0.8f) : 0.f;
+        fx.hackIntensity = m_hackSystem.hackIntensity();
+        fx.gameTime      = m_gameTime;
+
         m_lastDrawCalls = m_renderer.render(window, m_world, alpha, hpRatio,
                                             mouseWorld, m_tileMap,
-                                            m_parallax, m_shaders, m_weapon);
+                                            m_parallax, m_shaders, m_weapon,
+                                            m_enemyMgr, m_particles, fx);
 
-        // HUD: drawn in screen space (renderer resets view to default for overlays)
         if (pid != static_cast<uint32_t>(MAX_ENTITIES)
             && m_world.hasComponent<Health>(pid)
             && m_world.hasComponent<Weapon>(pid)) {
@@ -107,6 +129,8 @@ public:
                          m_world.getComponent<Health>(pid),
                          m_world.getComponent<Weapon>(pid),
                          m_enemyMgr.alertLevel());
+            if (m_hackSystem.isHacking())
+                m_hud.renderHackOverlay(window, m_hackSystem.hackProgress());
         }
     }
 
@@ -120,20 +144,25 @@ private:
     Player            m_player;
     PlayerStateMachine m_psm;
     WeaponSystem      m_weapon;
+    HackSystem        m_hackSystem;
     Camera            m_camera;
     TileMap           m_tileMap;
     EnemyManager      m_enemyMgr;
     ParallaxSystem    m_parallax;
     ShaderManager     m_shaders;
     Renderer          m_renderer;
+    ParticleSystem    m_particles;
     HUD               m_hud;
     int               m_lastDrawCalls = 0;
+    float             m_caTimer       = 0.f;
+    float             m_gameTime      = 0.f;
+    EventBus::Handle  m_damagedHandle = 0;
 };
 
 // ---- Game ----
 
 Game::Game()
-    : m_window(sf::VideoMode(1280, 720), "NULLIFY v0.2",
+    : m_window(sf::VideoMode(1280, 720), "NULLIFY v0.3",
                sf::Style::Titlebar | sf::Style::Close)
 {
     m_window.setVerticalSyncEnabled(false);
@@ -189,14 +218,13 @@ void Game::updateFpsTitle(float dt) {
         m_fpsTimer   = 0.0f;
         m_fpsCounter = 0;
 
-        // Retrieve draw call count from PlayState
         int drawCalls = 0;
         if (auto* ps = dynamic_cast<PlayState*>(m_states.top()))
             drawCalls = ps->lastDrawCalls();
 
         char title[64];
         std::snprintf(title, sizeof(title),
-                      "NULLIFY v0.2 | %d FPS | %d draw calls", m_fps, drawCalls);
+                      "NULLIFY v0.3 | %d FPS | %d draw calls", m_fps, drawCalls);
         m_window.setTitle(title);
     }
 }

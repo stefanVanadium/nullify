@@ -1,5 +1,6 @@
 #include "LevelLoader.h"
 #include "TileMap.h"
+#include "ecs/Components.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <iostream>
@@ -103,6 +104,26 @@ std::optional<LevelData> LevelLoader::load(const std::string& path,
             world.addComponent<Renderable>(eid, std::move(r));
 
             data.coverObjects.push_back(obj);
+        }
+    }
+
+    // ── Hackable terminals ───────────────────────────────────────────────────
+    if (j.contains("hackables")) {
+        for (const auto& h : j["hackables"]) {
+            float hx = static_cast<float>(h.value("x", 0) * data.tileSize);
+            float hy = static_cast<float>(h.value("y", 0) * data.tileSize);
+
+            uint32_t eid = world.createEntity();
+            Transform t{}; t.x = hx; t.y = hy; t.prevX = hx; t.prevY = hy;
+            world.addComponent<Transform>(eid, std::move(t));
+            Renderable r{};
+            r.size  = {16.f, 24.f};
+            r.color = sf::Color(0xAA, 0x00, 0xFF, 0xFF);  // hack violet
+            r.layer = 8;
+            world.addComponent<Renderable>(eid, std::move(r));
+            world.addComponent<HackableTag>(eid, HackableTag{});
+
+            data.hackables.push_back({ hx, hy });
         }
     }
 

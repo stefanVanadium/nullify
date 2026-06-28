@@ -81,5 +81,9 @@ struct WaypointPath {
 };
 
 // Marker components
-struct PlayerTag {};
-struct TileTag   {};
+struct PlayerTag   {};
+struct TileTag     {};
+
+struct HackableTag {
+    bool hacked = false;
+};

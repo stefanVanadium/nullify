@@ -97,3 +97,56 @@
 - Slide nu modifică hitbox Box2D în Sprint 2
 
 ---
+
+## CHECKPOINT 003 — Sprint 3 V0.3 Visual Combat + Hack Foundation
+**Data:** 2026-06-28
+**Status:** ✅ Build curat (debug + release), zero warnings/errors `-Wall -Wextra -Wpedantic`
+
+### Livrat
+
+**ENG — ParticleSystem:**
+- Pool 4096 particule (fixed array, zero heap în game loop)
+- `spawnBulletImpact(x,y)` — 6 scântei cyan (#00FFEE), viteză outward random, 0.4s viață
+- `spawnBlood(x,y)` — 5 particule #00FFEE/#FF0038 alternant, bias downward, 0.5s viață
+- Subscrie `BulletHitEvent` + `EnemyDiedEvent` în constructor, unsubscribe în destructor
+- `batchDraw(SpriteBatch&)` — merge în entity batch, 0 draw calls extra
+
+**REN — Post-process pipeline cu RenderTexture:**
+- `neon_glow.frag` — 12-tap bloom pe pixeli luminoși + chromatic aberration uniform `caIntensity`
+- `glitch.frag` — row displacement noise + RGB split + violet tint (#AA00FF)
+- `ShaderType::NeonGlow=2, Glitch=3, COUNT=4`
+- `Renderer` refăcut: scenă → `sf::RenderTexture` → neon_glow → window; glitch condiționat
+- `RenderEffects { caIntensity, hackIntensity, gameTime }` — bundle parametri efecte
+- **Draw call budget:** 9-10 draw calls ✅
+
+**GP — HackSystem:**
+- Press E în 80px de `HackableTag` → 3s countdown, glitch max pe entry → 0.2 pe durata hack
+- Success → `HackSuccessEvent`, terminal vizual → dark violet
+- `isHacking()`, `hackProgress()`, `hackIntensity()` expuse
+
+**GP — Enemy Projectile Bullets:**
+- `EnemyFireEvent` — AIStateMachine emite în loc de instant damage
+- Pool 256 `EnemyBullet` (zero heap), bullets roșii (#FF0038), 300px/s, raycast coliziune
+- `batchDrawBullets(SpriteBatch&)` — merge în entity batch
+
+**UI + LVL:**
+- `HUD::renderHackOverlay()` — panel centrat, `[HACKING...]`, bară violet progres
+- `LevelLoader` parsează `"hackables"` → `HackableTag` entities (violet 16×24px, layer 8)
+- `1-1.json` — terminal hackabil la tile (8,20) lângă spawn player
+
+**ECS:**
+- `HackableTag` component — `ComponentType::HackableTag=11, COUNT=12`
+- `EnemyFireEvent`, `HackActivatedEvent`, `HackFailedEvent` în EventBus.h
+
+### QA confirmată
+- [x] QA:S3:01 Build zero warnings/errors — debug + release (20/20 obiecte)
+- [ ] QA:S3:02..10 — runtime QA pending (necesită display)
+
+### Note tehnice
+- `sf::RenderTexture` Y-flip gestionat automat de SFML la draw via `sf::Sprite`
+- Vignette quad UV-uri ajustate (Y invertit) pentru orientarea corectă a RT-ului
+- ParticleSystem folosește LCG zero-heap pentru random în hot path
+- Enemy bullets nu au physics body — coliziune via raycast + AABB player check (d2 < 36²)
+- Enemy instant-damage din Sprint 2 înlocuit cu projectile real
+
+---

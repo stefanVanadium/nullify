@@ -5,7 +5,9 @@
 enum class ShaderType : uint8_t {
     Scanlines = 0,
     Vignette  = 1,
-    COUNT     = 2
+    NeonGlow  = 2,
+    Glitch    = 3,
+    COUNT     = 4
 };
 
 // Loads and caches all GLSL shaders at startup. Never compiles at runtime.
@@ -21,7 +23,7 @@ public:
 
 private:
     static constexpr size_t N = static_cast<size_t>(ShaderType::COUNT);
-    sf::Shader  m_shaders[N]; // C-array avoids deleted copy ctor issue
+    sf::Shader  m_shaders[N];
     bool        m_loaded[N]{};
     bool        m_shadersAvailable = false;
 };

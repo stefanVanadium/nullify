@@ -30,6 +30,8 @@ bool HUD::init(const std::string& fontPath) {
     m_hpBarFill.setPosition(18.f, 0.f);
     m_hpBarFill.setFillColor(CYAN);
 
+    static const sf::Color VIOLET = sf::Color(0xAA, 0x00, 0xFF, 0xFF);
+
     if (m_fontLoaded) {
         m_ammoText.setFont(m_font);
         m_ammoText.setCharacterSize(16);
@@ -38,7 +40,19 @@ bool HUD::init(const std::string& fontPath) {
         m_alertText.setFont(m_font);
         m_alertText.setCharacterSize(14);
         m_alertText.setFillColor(CYAN);
+
+        m_hackText.setFont(m_font);
+        m_hackText.setCharacterSize(20);
+        m_hackText.setFillColor(VIOLET);
+        m_hackText.setString("[ HACKING... ]");
     }
+
+    m_hackBarBg.setSize({204.f, 14.f});
+    m_hackBarBg.setFillColor(UI_BASE);
+    m_hackBarBg.setOutlineColor(sf::Color(0xAA, 0x00, 0xFF, 0xFF));
+    m_hackBarBg.setOutlineThickness(1.f);
+
+    m_hackBarFill.setFillColor(sf::Color(0xAA, 0x00, 0xFF, 0xFF));
 
     return m_fontLoaded;
 }
@@ -94,5 +108,43 @@ void HUD::render(sf::RenderWindow& window,
         sf::FloatRect ab = m_alertText.getLocalBounds();
         m_alertText.setPosition(W - ab.width - 16.f, 16.f);
         window.draw(m_alertText);
+    }
+}
+
+void HUD::renderHackOverlay(sf::RenderWindow& window, float progress) {
+    const sf::View& view = window.getDefaultView();
+    float W = view.getSize().x;
+    float H = view.getSize().y;
+    window.setView(view);
+
+    // Centered vertically + slightly above center
+    float cx = W * 0.5f;
+    float cy = H * 0.42f;
+
+    // Background panel
+    sf::RectangleShape panel({240.f, 60.f});
+    panel.setFillColor(sf::Color(0x0A, 0x10, 0x20, 0xDD));
+    panel.setOutlineColor(sf::Color(0xAA, 0x00, 0xFF, 0xFF));
+    panel.setOutlineThickness(2.f);
+    panel.setPosition(cx - 120.f, cy - 10.f);
+    window.draw(panel);
+
+    if (m_fontLoaded) {
+        sf::FloatRect tb = m_hackText.getLocalBounds();
+        m_hackText.setPosition(cx - tb.width * 0.5f, cy - 4.f);
+        window.draw(m_hackText);
+    }
+
+    // Progress bar
+    float barY = cy + 30.f;
+    m_hackBarBg.setSize({204.f, 10.f});
+    m_hackBarBg.setPosition(cx - 102.f, barY);
+    window.draw(m_hackBarBg);
+
+    float fillW = std::max(0.f, 200.f * std::clamp(progress, 0.f, 1.f));
+    if (fillW > 0.f) {
+        m_hackBarFill.setSize({fillW, 6.f});
+        m_hackBarFill.setPosition(cx - 100.f, barY + 2.f);
+        window.draw(m_hackBarFill);
     }
 }

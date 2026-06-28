@@ -9,8 +9,10 @@ bool ShaderManager::loadAll(const std::string& shaderDir) {
     m_shadersAvailable = true;
 
     struct { ShaderType type; const char* file; } entries[] = {
-        { ShaderType::Scanlines, "scanlines.frag" },
-        { ShaderType::Vignette,  "vignette.frag"  },
+        { ShaderType::Scanlines, "scanlines.frag"  },
+        { ShaderType::Vignette,  "vignette.frag"   },
+        { ShaderType::NeonGlow,  "neon_glow.frag"  },
+        { ShaderType::Glitch,    "glitch.frag"     },
     };
 
     bool allOk = true;
