@@ -27,6 +27,9 @@ public:
     // ignore: if non-null, that body's fixtures are skipped (use for LOS target body)
     bool rayCastClear(b2Vec2 from, b2Vec2 to, b2Body* ignore = nullptr) const;
 
+    // Safely removes a body from b2World — call before destroyEntity on physics entities
+    void destroyBody(b2Body* body);
+
     void setWorld(World* world) { m_ecsWorld = world; }
 
 private:

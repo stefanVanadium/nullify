@@ -117,6 +117,10 @@ bool PhysicsSystem::rayCastClear(b2Vec2 from, b2Vec2 to, b2Body* ignore) const {
     return !cb.blocked;
 }
 
+void PhysicsSystem::destroyBody(b2Body* body) {
+    if (body) m_b2World.DestroyBody(body);
+}
+
 b2Body* PhysicsSystem::createEdgeChain(const b2Vec2* verts, int32 count) {
     b2BodyDef def;
     def.type = b2_staticBody;

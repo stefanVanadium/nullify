@@ -99,7 +99,7 @@ std::optional<LevelData> LevelLoader::load(const std::string& path,
             world.addComponent<Transform>(eid, std::move(t));
             Renderable r{};
             r.size  = {obj.w, obj.h};
-            r.color = sf::Color(0x1A, 0x28, 0x40, 0xFF);
+            r.color = sf::Color(0x0E, 0x2A, 0x44, 0xFF);  // visible mid-blue, distinct from bg
             r.layer = 5;
             world.addComponent<Renderable>(eid, std::move(r));
 

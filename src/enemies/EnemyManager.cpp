@@ -75,6 +75,11 @@ void EnemyManager::update(float dt) {
             if (hp.current <= 0) {
                 const auto& tf = m_world.getComponent<Transform>(eid);
                 EventBus::emit(EnemyDiedEvent{ eid, tf.x, tf.y });
+                // Destroy physics body before entity — otherwise body becomes a phantom wall
+                if (m_world.hasComponent<Collidable>(eid)) {
+                    b2Body* body = m_world.getComponent<Collidable>(eid).body;
+                    m_physics.destroyBody(body);
+                }
                 m_world.destroyEntity(eid);
                 m_entities[static_cast<size_t>(i)] = m_entities[static_cast<size_t>(--m_count)];
                 continue;

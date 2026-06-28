@@ -102,8 +102,8 @@ int Renderer::render(sf::RenderWindow&    window,
     window.setView(window.getDefaultView());
 
     // 5. NeonGlow + chromatic aberration on scene texture
+    // Texture handle is stable; content updated by m_sceneRT.display() above
     sf::Sprite& sp = m_sceneSprite;
-    sp.setTexture(m_sceneRT.getTexture(), true);
 
     if (sf::Shader* ng = shaders.get(ShaderType::NeonGlow)) {
         ng->setUniform("texture",    sf::Shader::CurrentTexture);
