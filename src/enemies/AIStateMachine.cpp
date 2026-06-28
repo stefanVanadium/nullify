@@ -163,10 +163,12 @@ void AIStateMachine::combatEnforcer(uint32_t, float dt, float ex, float ey,
 void AIStateMachine::combatSniper(uint32_t eid, float dt, float ex, float ey,
                                    float px, float py,
                                    b2Body* body, AIState& ai) {
-    // Stay in place, aim, then fire
     body->SetLinearVelocity({0.f, body->GetLinearVelocity().y});
     if (ai.hasLOS) {
-        ai.aimTimer += dt;
+        ai.aimTimer  += dt;
+        ai.laserLock  = true;
+        ai.laserEndX  = px;
+        ai.laserEndY  = py;
         if (ai.aimTimer >= EnemyConfig::SNIPER_AIM_TIME && ai.attackTimer <= 0.f) {
             ai.attackTimer = EnemyConfig::SNIPER_ATTACK_INTERVAL;
             ai.aimTimer    = 0.f;
@@ -176,7 +178,8 @@ void AIStateMachine::combatSniper(uint32_t eid, float dt, float ex, float ey,
             EventBus::emit(EnemyFireEvent{ eid, ex, ey, dx, dy2 });
         }
     } else {
-        ai.aimTimer = 0.f;
+        ai.aimTimer  = 0.f;
+        ai.laserLock = false;
     }
     (void)eid;
 }

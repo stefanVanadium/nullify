@@ -76,9 +76,12 @@ struct AIState {
     float coverX           = 0.0f;   // ENFORCER: chosen cover position
     float coverY           = 0.0f;
     bool  atCover          = false;  // ENFORCER: reached cover position
-    bool  hackBlocking     = false;  // HACKER: currently blocking neural override
-    bool  empDisabled      = false;  // any type: stunned by EMP
+    bool  hackBlocking     = false;
+    bool  empDisabled      = false;
     float empTimer         = 0.0f;
+    float laserEndX        = 0.0f;  // SNIPER: laser sight endpoint (world space)
+    float laserEndY        = 0.0f;
+    bool  laserLock        = false; // SNIPER: actively aiming at player
     bool  hasLOS           = false;
     bool  pathDirty        = true;
     // Cached A* path (fixed-size to avoid heap allocation)

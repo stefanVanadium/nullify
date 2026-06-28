@@ -3,7 +3,7 @@
 #include "ecs/Systems/PhysicsSystem.h"
 #include "core/EventBus.h"
 #include "core/InputMap.h"
-#include "rendering/SpriteBatch.h"
+#include <SFML/Graphics.hpp>
 
 // Handles cone-of-vision detection, hearing, corpse spotting, and silent takedowns.
 // LOS raycasts are distributed round-robin across enemies to stay within budget (8/frame).
@@ -13,7 +13,7 @@ public:
     ~StealthSystem();
 
     void update(float dt, uint32_t playerEntityId, const InputMap& input);
-    void renderCones(SpriteBatch& batch) const;
+    void renderCones(sf::RenderTarget& rt) const;
 
 private:
     World&         m_world;

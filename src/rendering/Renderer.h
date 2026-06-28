@@ -9,6 +9,7 @@
 #include "RagdollSystem.h"
 #include "world/TileMap.h"
 #include "player/WeaponSystem.h"
+#include "player/StealthSystem.h"
 
 class EnemyManager;  // forward-declared to avoid include chain
 
@@ -35,6 +36,7 @@ public:
                const EnemyManager&   enemies,
                ParticleSystem&       particles,
                const RagdollSystem&  ragdolls,
+               const StealthSystem&  stealth,
                const RenderEffects&  effects);
 
 private:

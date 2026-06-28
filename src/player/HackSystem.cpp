@@ -4,35 +4,56 @@
 #include <cmath>
 
 float HackSystem::hackProgress() const {
-    if (!m_hacking) return 0.f;
-    return 1.0f - (m_hackTimer / HackConfig::TIER1_DURATION);
+    if (!m_minigame) return 0.f;
+    // Invert timeLeft to show completion progress
+    return 0.f;  // minigame handles its own progress display
 }
 
 float HackSystem::hackIntensity() const {
-    if (!m_hacking) return 0.f;
-    float elapsed = HackConfig::TIER1_DURATION - m_hackTimer;
-    // Full glitch on entry, then settle to 0.2
-    if (elapsed < HackConfig::GLITCH_ENTRY)
-        return 1.0f - (elapsed / HackConfig::GLITCH_ENTRY) * 0.8f;
+    if (!m_minigame) return 0.f;
+    if (m_glitchEntryTimer > 0.f)
+        return 1.0f - (1.0f - m_glitchEntryTimer / HackConfig::GLITCH_ENTRY) * 0.8f;
     return 0.2f;
 }
 
+void HackSystem::startMinigame(int tier) {
+    m_minigame = createHackMinigame(tier, m_storage, sizeof(m_storage));
+    m_glitchEntryTimer = HackConfig::GLITCH_ENTRY;
+}
+
+void HackSystem::destroyMinigame() {
+    if (m_minigame) {
+        m_minigame->~IHackMinigame();
+        m_minigame = nullptr;
+    }
+}
+
+void HackSystem::onSuccess(World& world) {
+    if (world.isAlive(m_hackTarget) && world.hasComponent<HackableTag>(m_hackTarget)) {
+        world.getComponent<HackableTag>(m_hackTarget).hacked = true;
+        if (world.hasComponent<Renderable>(m_hackTarget))
+            world.getComponent<Renderable>(m_hackTarget).color = sf::Color(0x55, 0x00, 0x88, 0xFF);
+        EventBus::emit(HackSuccessEvent{ m_hackTarget });
+    }
+    destroyMinigame();
+    m_hackTarget = static_cast<uint32_t>(-1);
+}
+
+void HackSystem::onFailure() {
+    destroyMinigame();
+    m_hackTarget = static_cast<uint32_t>(-1);
+}
+
 void HackSystem::update(float dt, uint32_t playerEntityId, World& world, const InputMap& input) {
-    if (m_hacking) {
-        m_hackTimer -= dt;
-        if (m_hackTimer <= 0.f) {
-            m_hacking = false;
-            if (world.isAlive(m_hackTarget) && world.hasComponent<HackableTag>(m_hackTarget)) {
-                world.getComponent<HackableTag>(m_hackTarget).hacked = true;
-                // Tint hacked terminal dark
-                if (world.hasComponent<Renderable>(m_hackTarget)) {
-                    world.getComponent<Renderable>(m_hackTarget).color =
-                        sf::Color(0x55, 0x00, 0x88, 0xFF);
-                }
-                EventBus::emit(HackSuccessEvent{ m_hackTarget });
-            }
-            m_hackTarget = static_cast<uint32_t>(-1);
-        }
+    if (m_glitchEntryTimer > 0.f)
+        m_glitchEntryTimer = std::max(0.f, m_glitchEntryTimer - dt);
+
+    if (m_minigame) {
+        auto result = m_minigame->update(dt);
+        if (result == IHackMinigame::Result::SUCCESS)
+            onSuccess(world);
+        else if (result == IHackMinigame::Result::FAILURE)
+            onFailure();
         return;
     }
 
@@ -59,9 +80,11 @@ void HackSystem::update(float dt, uint32_t playerEntityId, World& world, const I
     }
 
     if (nearest != static_cast<uint32_t>(-1)) {
-        m_hacking    = true;
         m_hackTarget = nearest;
-        m_hackTimer  = HackConfig::TIER1_DURATION;
+        int tier = 1;
+        if (world.hasComponent<HackableTag>(nearest))
+            tier = world.getComponent<HackableTag>(nearest).tier;
+        startMinigame(tier);
         EventBus::emit(HackActivatedEvent{ nearest });
     }
 }

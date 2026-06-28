@@ -42,6 +42,7 @@ int Renderer::render(sf::RenderWindow&    window,
                      const EnemyManager&  enemies,
                      ParticleSystem&      particles,
                      const RagdollSystem& ragdolls,
+                     const StealthSystem& stealth,
                      const RenderEffects& effects) {
     int drawCalls = 0;
 
@@ -91,7 +92,39 @@ int Renderer::render(sf::RenderWindow&    window,
     enemies.batchDrawBullets(m_entityBatch);
     ragdolls.render(m_entityBatch);
     particles.batchDraw(m_entityBatch);
+
+    // SNIPER laser sights — thin red lines via elongated quads
+    static const sf::Color LASER_COL = sf::Color(0xFF, 0x00, 0x38, 0x80);
+    for (uint32_t eid = 0; eid < MAX_ENTITIES; ++eid) {
+        if (!world.isAlive(eid)) continue;
+        if (!world.hasComponent<EnemyTag>(eid)) continue;
+        if (world.getComponent<EnemyTag>(eid).type != EnemyType::SNIPER) continue;
+        if (!world.hasComponent<AIState>(eid)) continue;
+        const auto& ai = world.getComponent<AIState>(eid);
+        if (!ai.laserLock) continue;
+        const auto& tf = world.getComponent<Transform>(eid);
+        float ex = tf.x + EnemyConfig::SNIPER_WIDTH * 0.5f;
+        float ey = tf.y + EnemyConfig::SNIPER_HEIGHT * 0.5f;
+        float dx = ai.laserEndX - ex, dy = ai.laserEndY - ey;
+        float len = std::sqrt(dx*dx + dy*dy);
+        if (len > 1.f) {
+            // Draw as a thin horizontal rect rotated — approximate with a 2px-tall rect
+            float angle = std::atan2(dy, dx);
+            // Place rect at midpoint, width=len, height=2
+            float mx = ex + dx * 0.5f - 1.f * std::sin(angle);
+            float my = ey + dy * 0.5f - 1.f * std::cos(angle);
+            // Pulse alpha
+            sf::Color col = LASER_COL;
+            col.a = static_cast<sf::Uint8>(128 + 64 * std::sin(effects.gameTime * 6.28f));
+            m_entityBatch.draw({ mx, my }, { len, 2.f }, col);
+        }
+    }
+
     drawCalls += m_entityBatch.end(m_sceneRT);
+
+    // 3b. Cone-of-vision overlays (triangle fans — needs RenderTarget directly)
+    stealth.renderCones(m_sceneRT);
+    ++drawCalls;
 
     // 4. Crosshair (world space)
     m_crosshair.setPosition(mouseWorldPos);

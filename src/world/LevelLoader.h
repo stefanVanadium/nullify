@@ -23,6 +23,12 @@ struct CoverObject {
 
 struct HackableSpawnData {
     float x = 0.f, y = 0.f;
+    int   tier = 1;
+};
+
+struct WeaponPickupData {
+    float      x = 0.f, y = 0.f;
+    int        weaponTypeInt = 0;
 };
 
 struct LevelData {
@@ -30,6 +36,7 @@ struct LevelData {
     std::vector<EnemySpawnData>    enemies;
     std::vector<CoverObject>       coverObjects;
     std::vector<HackableSpawnData> hackables;
+    std::vector<WeaponPickupData>  weaponPickups;
     // Collision data retained for NavMesh building
     std::vector<std::vector<int>>  collision;
     int width    = 0;

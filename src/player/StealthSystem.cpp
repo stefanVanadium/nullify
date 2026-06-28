@@ -2,6 +2,8 @@
 #include "ecs/Components.h"
 #include <cmath>
 #include <algorithm>
+#include <SFML/Graphics/VertexArray.hpp>
+#include <SFML/Graphics/PrimitiveType.hpp>
 
 static constexpr int   LOS_BUDGET_PER_FRAME = 8;
 static constexpr float TAKEDOWN_RANGE       = 48.0f;
@@ -188,10 +190,9 @@ void StealthSystem::update(float dt, uint32_t playerEntityId, const InputMap& in
     checkCorpseDetection();
 }
 
-void StealthSystem::renderCones(SpriteBatch& batch) const {
-    // Draw a simple 2-segment indicator per enemy: a small colored rect in front
-    // Full triangle cone rendering requires vertex manipulation beyond SpriteBatch quads.
-    // Approximation: draw a thin rectangle in the facing direction.
+void StealthSystem::renderCones(sf::RenderTarget& rt) const {
+    constexpr int SEGMENTS = 10;  // arc subdivisions — more = smoother cone
+
     for (uint32_t eid = 0; eid < MAX_ENTITIES; ++eid) {
         if (!m_world.isAlive(eid)) continue;
         if (!m_world.hasComponent<ConeOfVision>(eid)) continue;
@@ -202,19 +203,53 @@ void StealthSystem::renderCones(SpriteBatch& batch) const {
 
         float ex = tf.x + 12.f, ey = tf.y + 24.f;
 
-        // Color: cyan if idle, red if playerVisible
-        sf::Color col = cov.playerVisible
-                      ? sf::Color(0xFF, 0x00, 0x38, 0x60)
-                      : sf::Color(0x00, 0xFF, 0xEE, 0x40);
-
-        // Draw a small indicator strip in facing direction
+        // Facing direction from velocity (most reliable real-time indicator)
         float facing = 1.f;
-        if (m_world.hasComponent<AIState>(eid))
-            facing = (m_world.getComponent<AIState>(eid).lastSeenX < ex) ? -1.f : 1.f;
+        if (m_world.hasComponent<Velocity>(eid)) {
+            const auto& vel = m_world.getComponent<Velocity>(eid);
+            if (vel.vx < -0.5f)      facing = -1.f;
+            else if (vel.vx > 0.5f)  facing = 1.f;
+        }
+        // Fallback: derive from AIState target
+        if (m_world.hasComponent<AIState>(eid)) {
+            const auto& ai = m_world.getComponent<AIState>(eid);
+            if (ai.targetX < tf.x - 4.f)      facing = -1.f;
+            else if (ai.targetX > tf.x + 4.f) facing = 1.f;
+        }
 
-        float indicW = cov.range * 0.4f;
-        float indicX = (facing > 0.f) ? ex : ex - indicW;
+        float baseAngle = (facing >= 0.f) ? 0.f : 3.14159265f;
 
-        batch.draw({ indicX, ey - 3.f }, { indicW, 6.f }, col);
+        // Semi-transparent fill: cyan idle, red when player spotted
+        sf::Color fillCol = cov.playerVisible
+            ? sf::Color(0xFF, 0x00, 0x38, 0x50)
+            : sf::Color(0x00, 0xFF, 0xEE, 0x28);
+
+        // Triangle fan: center + SEGMENTS+1 arc vertices
+        sf::VertexArray va(sf::TriangleFan, static_cast<std::size_t>(SEGMENTS + 2));
+        va[0] = { sf::Vector2f(ex, ey), fillCol };
+
+        for (int i = 0; i <= SEGMENTS; ++i) {
+            float t = static_cast<float>(i) / static_cast<float>(SEGMENTS);
+            float a = baseAngle - cov.halfAngle + t * 2.f * cov.halfAngle;
+            float px = ex + cov.range * std::cos(a);
+            float py = ey + cov.range * std::sin(a);
+            va[static_cast<std::size_t>(i + 1)] = { sf::Vector2f(px, py), fillCol };
+        }
+
+        rt.draw(va);
+
+        // Thin outline edges (direction lines only — left and right edge of cone)
+        sf::Color edgeCol = cov.playerVisible
+            ? sf::Color(0xFF, 0x00, 0x38, 0xA0)
+            : sf::Color(0x00, 0xFF, 0xEE, 0x70);
+
+        sf::Vertex edge[4];
+        float aLeft  = baseAngle - cov.halfAngle;
+        float aRight = baseAngle + cov.halfAngle;
+        edge[0] = { sf::Vector2f(ex, ey), edgeCol };
+        edge[1] = { sf::Vector2f(ex + cov.range * std::cos(aLeft),  ey + cov.range * std::sin(aLeft)),  edgeCol };
+        edge[2] = { sf::Vector2f(ex, ey), edgeCol };
+        edge[3] = { sf::Vector2f(ex + cov.range * std::cos(aRight), ey + cov.range * std::sin(aRight)), edgeCol };
+        rt.draw(edge, 4, sf::Lines);
     }
 }

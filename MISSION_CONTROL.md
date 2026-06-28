@@ -150,3 +150,67 @@
 - Enemy instant-damage din Sprint 2 înlocuit cu projectile real
 
 ---
+
+## CHECKPOINT 004 — Sprint 4 V0.4 Gameplay Depth
+**Data:** 2026-06-28
+**Status:** ✅ Build curat, testat de Stefan, zero erori/warnings
+
+### Livrat
+
+**ENG — RagdollSystem:**
+- Pool 32 ragdoll instances (zero heap), 6 Box2D bodies + 5 revolute joints per moarte enemy
+- Aplică impulse la impact, 4s lifetime cu fade α→0, distruge joints în ordine inversă
+- Subscrie `EnemyDiedEvent` în constructor
+
+**ENG — Stealth Components + Events:**
+- `ConeOfVision`, `HearingRadius`, `StealthBody`, `SilentTakedown`, `CoverTag`, `PickupTag` în Components.h
+- 10 evenimente noi în EventBus.h (CorpseFound, SoundEmitted, Takedown, EnemyHacked, etc.)
+- World extins la 18 tipuri componente
+
+**ENG — PhysicsSystem:** `createRevoluteJoint` + `destroyJoint`
+
+**GP — Toate 6 Armele:**
+- `WeaponConfig.h` complet rewrite — constexpr per armă
+- `WeaponSystem` rewrite — slot system 6 arme, switchWeapon (scroll/Q), unlockWeapon
+- PHANTOM-9 silenced, SMG spread, Railgun penetrant, VOID SHOTGUN 8 pellets knockback, EMP arc gravitațional, Neural Spike hack-on-hit
+- Ammo infinit activat pentru testare (1 linie comentată)
+
+**GP — Stealth System:**
+- `StealthSystem` — cone LOS round-robin (max 8/frame), hearing alert, corpse detection, takedown [F]
+- Conuri randate ca **triangle fan** real (10 segmente), semi-transparent cyan/roșu
+
+**AI — Toate 8 Tipurile de Inamici:**
+- `EnemyConfig.h` complet (8 tipuri, HP/speed/range/behavior per tip)
+- `AIStateMachine` — combat handlers per tip: ENFORCER cover-seek, SNIPER laser+aim, DRONE aerien fără NavMesh, HACKER blochează hack, HEAVY minigun, SHIELD melee, CYBORG_ELITE stub
+- `EnemyManager::spawnEnemy(EnemyType, x, y, waypoints)` factory
+
+**REN — HUD Weapon Slots:**
+- 6 slot-uri 44×44px stânga-jos, slot activ cyan, unlocked dim, locked invizibil
+- Abrevierea armei + ammo count per slot
+
+**UI — Hacking Minigame Tier 1/2/3:**
+- `HackMinigame` interfață + factory cu **placement-new** (zero heap)
+- Tier 1: sequence match A/B/C/D, 3s, grace period 250ms, edge-detection corect
+- Tier 2: circuit routing 5×5 grid, arrow keys, 3 layout-uri, 8s
+- Tier 3: ICE breaker 3 layere, BRUTE FORCE vs DEEP SCAN, 12s
+- GameState HACK freeze — physics + AI oprite pe durata minigame-ului
+- Dimmer panel + randare self-contained per tier
+
+**LVL — Level 1-2 și 1-3:**
+- `LevelLoader` parsează `"type"` enemy, `"tier"` hackable, `"items"` weapon pickups
+- `1-2.json` — "THE UNDERCROFT" 80×25: SCOUT×2, ENFORCER×4, SNIPER×1, Tier1+Tier2, SMG pickup
+- `1-3.json` — "VEKTOR OUTPOST" 100×30: toate 8 tipuri, Tier1/2/3, 4 weapon pickups
+- Weapon pickup detection AABB → unlockWeapon + destroyEntity
+- **F1/F2/F3** pentru level switching rapid în joc
+
+**BLD:** 4 surse hacking adăugate în CMakeLists.txt
+
+### Note tehnice
+- `sf::RenderWindow dummy` în HackSystem eliminat (fura focus ferestrei, bloca input minigame)
+- Unicode ■▲●◆ → ASCII A/B/C/D (ShareTechMono nu are glyphuri Unicode)
+- `sf::Clock().getElapsedTime()` pe clock nou = întotdeauna 0 → fix: LCG counter static
+- Conuri randate cu `sf::TriangleFan` direct în RenderTarget (SpriteBatch nu suportă primitivi cu rotație)
+- Facing direction derivat din Velocity + AIState.targetX pentru conuri
+- git: main branch, Sprint 4 complet
+
+---

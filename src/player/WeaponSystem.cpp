@@ -129,7 +129,8 @@ void WeaponSystem::fire(sf::Vector2f from, sf::Vector2f target, uint32_t playerE
     default: break;
     }
 
-    --slot.ammo;
+    // ammo intentionally infinite — finite ammo to be re-enabled when pickups are polished
+    // --slot.ammo;
 
     if (soundRadius > 0.f)
         EventBus::emit(SoundEmittedEvent{ from.x, from.y, soundRadius, true });

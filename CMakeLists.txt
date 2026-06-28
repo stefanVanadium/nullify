@@ -77,6 +77,10 @@ set(SOURCES
     src/ui/HUD.cpp
     src/rendering/RagdollSystem.cpp
     src/player/StealthSystem.cpp
+    src/hacking/HackMinigame.cpp
+    src/hacking/Tier1Sequence.cpp
+    src/hacking/Tier2Circuit.cpp
+    src/hacking/Tier3ICE.cpp
 )
 
 

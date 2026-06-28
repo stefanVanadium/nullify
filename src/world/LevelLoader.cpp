@@ -1,11 +1,33 @@
 #include "LevelLoader.h"
 #include "TileMap.h"
 #include "ecs/Components.h"
+#include "player/WeaponConfig.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <iostream>
+#include <string_view>
 
 using json = nlohmann::json;
+
+static EnemyType parseEnemyType(std::string_view s) {
+    if (s == "ENFORCER")     return EnemyType::ENFORCER;
+    if (s == "SHIELD")       return EnemyType::SHIELD;
+    if (s == "SNIPER")       return EnemyType::SNIPER;
+    if (s == "HACKER")       return EnemyType::HACKER;
+    if (s == "HEAVY")        return EnemyType::HEAVY;
+    if (s == "DRONE")        return EnemyType::DRONE;
+    if (s == "CYBORG_ELITE") return EnemyType::CYBORG_ELITE;
+    return EnemyType::SCOUT; // default
+}
+
+static int parseWeaponType(std::string_view s) {
+    if (s == "STATIC_SMG")   return static_cast<int>(WeaponType::STATIC_SMG);
+    if (s == "RAILGUN")      return static_cast<int>(WeaponType::RAILGUN);
+    if (s == "VOID_SHOTGUN") return static_cast<int>(WeaponType::VOID_SHOTGUN);
+    if (s == "EMP_GRENADE")  return static_cast<int>(WeaponType::EMP_GRENADE);
+    if (s == "NEURAL_SPIKE") return static_cast<int>(WeaponType::NEURAL_SPIKE);
+    return static_cast<int>(WeaponType::PHANTOM9);
+}
 
 std::optional<LevelData> LevelLoader::load(const std::string& path,
                                             World&             world,
@@ -66,8 +88,7 @@ std::optional<LevelData> LevelLoader::load(const std::string& path,
             EnemySpawnData es;
             es.x = static_cast<float>(e.value("x", 0) * data.tileSize);
             es.y = static_cast<float>(e.value("y", 0) * data.tileSize);
-            // type: only SCOUT for now
-            es.type = EnemyType::SCOUT;
+            es.type = parseEnemyType(e.value("type", "SCOUT"));
 
             if (e.contains("waypoints")) {
                 int wIdx = 0;
@@ -121,9 +142,32 @@ std::optional<LevelData> LevelLoader::load(const std::string& path,
             r.color = sf::Color(0xAA, 0x00, 0xFF, 0xFF);  // hack violet
             r.layer = 8;
             world.addComponent<Renderable>(eid, std::move(r));
-            world.addComponent<HackableTag>(eid, HackableTag{});
+            int tier = h.value("tier", 1);
+            world.addComponent<HackableTag>(eid, HackableTag{ false, tier });
 
-            data.hackables.push_back({ hx, hy });
+            data.hackables.push_back({ hx, hy, tier });
+        }
+    }
+
+    // ── Weapon pickups ───────────────────────────────────────────────────────
+    if (j.contains("spawns") && j["spawns"].contains("items")) {
+        for (const auto& item : j["spawns"]["items"]) {
+            if (item.value("itemType", "") != "weapon") continue;
+            float wx = static_cast<float>(item.value("x", 0) * data.tileSize);
+            float wy = static_cast<float>(item.value("y", 0) * data.tileSize);
+            int   wt = parseWeaponType(item.value("weaponType", "PHANTOM9"));
+
+            uint32_t eid = world.createEntity();
+            Transform t{}; t.x = wx; t.y = wy; t.prevX = wx; t.prevY = wy;
+            world.addComponent<Transform>(eid, std::move(t));
+            Renderable r{};
+            r.size  = {12.f, 8.f};
+            r.color = sf::Color(0xFF, 0xE6, 0x00, 0xFF);  // neon yellow — pickup
+            r.layer = 7;
+            world.addComponent<Renderable>(eid, std::move(r));
+            world.addComponent<PickupTag>(eid, PickupTag{ wt });
+
+            data.weaponPickups.push_back({ wx, wy, wt });
         }
     }
 

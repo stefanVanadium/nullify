@@ -416,12 +416,12 @@ Dark synthwave + industrial electronic. Tempo se adaptează la starea jocului:
 - [x] Chromatic aberration la damage (0.8s decay, integrat în neon_glow.frag)
 - [x] Scanlines overlay (permanent, GLSL)
 
-### Luna 4 — Gameplay Depth
-- [ ] Hacking minigame complet
-- [ ] Toate tipurile de inamici
-- [ ] Stealth system (cone of vision, hearing)
-- [ ] Toate armele implementate
-- [ ] Level 1-1 → 1-3 complet
+### Luna 4 — Gameplay Depth ✅ Sprint 4 (v0.4)
+- [x] Hacking minigame complet (Tier 1/2/3 — sequence / circuit / ICE breaker)
+- [x] Toate 8 tipurile de inamici (SCOUT/ENFORCER/SHIELD/SNIPER/HACKER/HEAVY/DRONE/CYBORG_ELITE)
+- [x] Stealth system (cone of vision, hearing, corpse detection, silent takedown)
+- [x] Toate 6 armele (PHANTOM-9/SMG/RAILGUN/VOID SHOTGUN/EMP GRENADE/NEURAL SPIKE)
+- [x] Level 1-1 → 1-3 complet (weapon pickups, hackables Tier1/2/3, cover objects)
 
 ### Luna 5 — Content & Polish
 - [ ] Audio complet (SFML Audio / OpenAL)
