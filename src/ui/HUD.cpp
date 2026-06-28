@@ -1,6 +1,7 @@
 #include "HUD.h"
 #include <algorithm>
 #include <cstdio>
+#include <fstream>
 
 // Color palette constants
 static const sf::Color CYAN    = sf::Color(0x00, 0xFF, 0xEE, 0xFF);
@@ -11,7 +12,11 @@ static const sf::Color DANGER  = sf::Color(0xFF, 0x00, 0x38, 0xFF);
 static const sf::Color YELLOW  = sf::Color(0xFF, 0xE6, 0x00, 0xFF);
 
 bool HUD::init(const std::string& fontPath) {
-    m_fontLoaded = m_font.loadFromFile(fontPath);
+    // Check existence first to avoid SFML printing an error for missing optional fonts
+    if (std::ifstream(fontPath).is_open())
+        m_fontLoaded = m_font.loadFromFile(fontPath);
+    else
+        m_fontLoaded = false;
 
     // HP bar background
     m_hpBarBg.setSize({204.f, 14.f});

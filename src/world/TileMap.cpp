@@ -7,8 +7,8 @@ void TileMap::build(const TileMapData& data, PhysicsSystem& physics) {
     m_vertexCount = 0;
     float ts = static_cast<float>(data.tileSize);
 
-    for (int row = 0; row < data.height; ++row) {
-        if (row >= static_cast<int>(data.collision.size())) break;
+    int rowCount = static_cast<int>(data.collision.size());
+    for (int row = 0; row < rowCount; ++row) {
         for (int col = 0; col < data.width; ++col) {
             if (col >= static_cast<int>(data.collision[row].size())) break;
             if (data.collision[row][col] == 0) continue;
