@@ -6,6 +6,7 @@
 #include "ShaderManager.h"
 #include "ParallaxSystem.h"
 #include "world/TileMap.h"
+#include "player/WeaponSystem.h"
 
 class Renderer {
 public:
@@ -19,7 +20,8 @@ public:
                sf::Vector2f      mouseWorldPos,
                const TileMap&    tileMap,
                ParallaxSystem&   parallax,
-               ShaderManager&    shaders);
+               ShaderManager&    shaders,
+               const WeaponSystem& weapon);
 
 private:
     SpriteBatch m_entityBatch;

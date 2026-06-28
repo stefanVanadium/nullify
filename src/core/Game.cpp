@@ -96,7 +96,7 @@ public:
 
         m_lastDrawCalls = m_renderer.render(window, m_world, alpha, hpRatio,
                                             mouseWorld, m_tileMap,
-                                            m_parallax, m_shaders);
+                                            m_parallax, m_shaders, m_weapon);
 
         // HUD: drawn in screen space (renderer resets view to default for overlays)
         if (pid != static_cast<uint32_t>(MAX_ENTITIES)

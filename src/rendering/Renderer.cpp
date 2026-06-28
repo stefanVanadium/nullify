@@ -33,7 +33,8 @@ int Renderer::render(sf::RenderWindow& window,
                      sf::Vector2f      mouseWorldPos,
                      const TileMap&    tileMap,
                      ParallaxSystem&   parallax,
-                     ShaderManager&    shaders) {
+                     ShaderManager&    shaders,
+                     const WeaponSystem& weapon) {
     int drawCalls = 0;
 
     // ── World space (camera view already applied by caller) ──────────────────
@@ -74,6 +75,7 @@ int Renderer::render(sf::RenderWindow& window,
         float drawY = t.prevY + alpha * (t.y - t.prevY);
         m_entityBatch.draw({drawX, drawY}, r.size, r.color);
     }
+    weapon.batchDraw(m_entityBatch);   // bullets in same batch = 0 extra draw calls
     drawCalls += m_entityBatch.end(window);
 
     // 4. Crosshair (world space)
