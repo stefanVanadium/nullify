@@ -1,5 +1,5 @@
 # PLAN.md — NULLIFY Sprint 1: V0.1 Foundation
-> Creat: 2026-06-28 | Status: **Approval Gate: PENDING**
+> Creat: 2026-06-28 | Status: **IN EXECUȚIE — QA pending**
 
 ---
 
@@ -36,18 +36,18 @@ BLD (0) → ENG (1) → ENG Physics + REN Basic (2, paralel) → GP Player + LVL
 ### WAVE 0 — BLD: Infrastructură Build
 **Tag: `BLD:`**
 
-- [ ] `BLD:01` — `CMakeLists.txt` complet: SFML 2.6 + Box2D 2.4 + C++20 + Ninja + copy assets post-build
-- [ ] `BLD:02` — Structura de directoare: `src/`, `assets/levels/`, `assets/sprites/`, `assets/shaders/`, `assets/fonts/`
-- [ ] `BLD:03` — `src/utils/PoolAllocator.h` — `template<typename T, size_t N>`, allocate O(1), free O(1), oldest-reuse la exhaustion
-- [ ] `BLD:04` — `src/utils/MathUtils.h` — `Vec2`, `AABB`, `lerp()`, `clamp()`, `lerpAngle()`
-- [ ] `BLD:05` — Verificare build curat (zero warnings cu `-Wall -Wextra`)
+- [x] `BLD:01` — `CMakeLists.txt` complet: SFML 2.6 + Box2D 2.4 + C++20 + Ninja + copy assets post-build
+- [x] `BLD:02` — Structura de directoare: `src/`, `assets/levels/`, `assets/sprites/`, `assets/shaders/`, `assets/fonts/`
+- [x] `BLD:03` — `src/utils/PoolAllocator.h` — `template<typename T, size_t N>`, allocate O(1), free O(1), oldest-reuse la exhaustion
+- [x] `BLD:04` — `src/utils/MathUtils.h` — `Vec2`, `AABB`, `lerp()`, `clamp()`, `lerpAngle()`
+- [x] `BLD:05` — Verificare build curat (zero warnings cu `-Wall -Wextra`)
 
 ---
 
 ### WAVE 1 — ENG: Core Engine + ECS
 **Tag: `ENG:`**
 
-- [ ] `ENG:01` — `src/ecs/Components.h` — **TOATE** componentele POD în un singur fișier:
+- [x] `ENG:01` — `src/ecs/Components.h` — **TOATE** componentele POD în un singur fișier:
   - `Transform { float x, y, rotation; }`
   - `Velocity { float vx, vy; }`
   - `Health { int current, max; }`
@@ -55,7 +55,7 @@ BLD (0) → ENG (1) → ENG Physics + REN Basic (2, paralel) → GP Player + LVL
   - `Collidable { b2Body* body; float w, h; }`
   - `PlayerTag {}` — marker component
 
-- [ ] `ENG:02` — `src/ecs/World.h/.cpp` — ECS registry cu Struct-of-Arrays:
+- [x] `ENG:02` — `src/ecs/World.h/.cpp` — ECS registry cu Struct-of-Arrays:
   - `createEntity() → uint32_t`
   - `destroyEntity(uint32_t)`
   - `addComponent<T>(entity, T&&)`
@@ -63,24 +63,24 @@ BLD (0) → ENG (1) → ENG Physics + REN Basic (2, paralel) → GP Player + LVL
   - `hasComponent<T>(entity) → bool`
   - Max 1024 entități active (fixat la compilare)
 
-- [ ] `ENG:03` — `src/core/EventBus.h/.cpp` — typed event bus:
+- [x] `ENG:03` — `src/core/EventBus.h/.cpp` — typed event bus:
   - `emit<EventT>(EventT&&)`
   - `on<EventT>(callback)` — returns subscription handle
   - `clear()` — la schimbare de stare
   - Zero heap în emit() — callbacks în vector pre-alocat
 
-- [ ] `ENG:04` — `src/core/InputMap.h/.cpp` — abstracție input:
+- [x] `ENG:04` — `src/core/InputMap.h/.cpp` — abstracție input:
   - Acțiuni enumerate: `Action::MoveLeft`, `MoveRight`, `Jump`, `Crouch`, `Dash`, `Hack`, `Fire`
   - `isHeld(Action)`, `isPressed(Action)`, `isReleased(Action)`
   - `processEvent(sf::Event&)` — singura conexiune la SFML events
   - Bindings hardcodate în V0.1 (WASD + Mouse)
 
-- [ ] `ENG:05` — `src/core/GameState.h/.cpp` — state machine:
+- [x] `ENG:05` — `src/core/GameState.h/.cpp` — state machine:
   - Stări: `MENU`, `PLAY`, `HACK`, `PAUSE`, `GAMEOVER`
   - `pushState()`, `popState()`, `replaceState()`
   - Fiecare stare: `enter()`, `update(float dt)`, `render()`, `exit()`
 
-- [ ] `ENG:06` — `src/core/Game.h/.cpp` — main loop:
+- [x] `ENG:06` — `src/core/Game.h/.cpp` — main loop:
   ```cpp
   const float FIXED_DT = 1.0f / 60.0f;
   float accumulator = 0.0f;
@@ -105,7 +105,7 @@ BLD (0) → ENG (1) → ENG Physics + REN Basic (2, paralel) → GP Player + LVL
 #### ENG: PhysicsSystem
 **Tag: `ENG:`**
 
-- [ ] `ENG:07` — `src/ecs/Systems/PhysicsSystem.h/.cpp`:
+- [x] `ENG:07` — `src/ecs/Systems/PhysicsSystem.h/.cpp`:
   - Deține singurul `b2World` din toată aplicația
   - `update(float fixedDt)` — un singur `b2World::Step()` per apel
   - Sync `b2Body` → `Transform` component după step
@@ -117,7 +117,7 @@ BLD (0) → ENG (1) → ENG Physics + REN Basic (2, paralel) → GP Player + LVL
 #### REN: RenderSystem Basic
 **Tag: `REN:`**
 
-- [ ] `REN:01` — `src/rendering/Renderer.h/.cpp`:
+- [x] `REN:01` — `src/rendering/Renderer.h/.cpp`:
   - Primește `sf::RenderWindow&` și `interpolation alpha`
   - Iterează `Renderable` + `Transform` sortat pe `layer`
   - Interpolare vizuală: `drawPos = prevPos + alpha * (currPos - prevPos)`
@@ -131,7 +131,7 @@ BLD (0) → ENG (1) → ENG Physics + REN Basic (2, paralel) → GP Player + LVL
 #### GP: Player
 **Tag: `GP:`**
 
-- [ ] `GP:01` — `src/player/PlayerConfig.h` — **toate** valorile ca `constexpr`:
+- [x] `GP:01` — `src/player/PlayerConfig.h` — **toate** valorile ca `constexpr`:
   ```cpp
   namespace PlayerConfig {
       constexpr float MOVE_SPEED      = 220.0f;
@@ -144,13 +144,13 @@ BLD (0) → ENG (1) → ENG Physics + REN Basic (2, paralel) → GP Player + LVL
   }
   ```
 
-- [ ] `GP:02` — `src/player/PlayerStateMachine.h/.cpp`:
+- [x] `GP:02` — `src/player/PlayerStateMachine.h/.cpp`:
   - Stări: `IDLE`, `RUN`, `JUMP`, `FALL`, `CROUCH`
   - Tranziții: `InputMap` + contact cu solul din PhysicsSystem
   - Coyote time + jump buffering implementate
   - Emite `PlayerStateChangedEvent` pe tranziție
 
-- [ ] `GP:03` — `src/player/Player.h/.cpp`:
+- [x] `GP:03` — `src/player/Player.h/.cpp`:
   - Creează entitatea ZERO în `World`
   - Adaugă: `Transform`, `Velocity`, `Health{100,100}`, `Renderable`, `Collidable`, `PlayerTag`
   - `update(float dt)` — citește `InputMap`, aplică forțe pe `b2Body`
@@ -159,7 +159,7 @@ BLD (0) → ENG (1) → ENG Physics + REN Basic (2, paralel) → GP Player + LVL
 #### LVL: TileMap + Loader + Camera
 **Tag: `LVL:`**
 
-- [ ] `LVL:01` — `assets/levels/1-1.json` — nivel minim valid:
+- [x] `LVL:01` — `assets/levels/1-1.json` — nivel minim valid:
   ```json
   {
     "meta": { "id": "1-1", "name": "Streets — Sector Zero", "act": 1,
@@ -177,19 +177,19 @@ BLD (0) → ENG (1) → ENG Physics + REN Basic (2, paralel) → GP Player + LVL
   - 60×20 tiles @ 32px = 1920×640px nivel
   - Podea completă + 4 platforme suspendate la înălțimi diferite
 
-- [ ] `LVL:02` — `src/world/TileMap.h/.cpp`:
+- [x] `LVL:02` — `src/world/TileMap.h/.cpp`:
   - Parsare JSON cu nlohmann/json
   - Tile ID 0 = gol, 1 = solid
   - Construiește Box2D edge chains **per rând** (nu per tile individual)
   - Randare: `sf::RectangleShape` gri `#1A2840` per tile solid vizibil
 
-- [ ] `LVL:03` — `src/world/LevelLoader.h/.cpp`:
+- [x] `LVL:03` — `src/world/LevelLoader.h/.cpp`:
   - `load(const std::string& path, World&, PhysicsSystem&) → bool`
   - Parsează JSON → creează entități tile + bodies Box2D
   - Returnează `PlayerSpawn` struct cu poziția de start
   - Erori fatale loggate pe stderr, return false
 
-- [ ] `LVL:04` — `src/world/Camera.h/.cpp`:
+- [x] `LVL:04` — `src/world/Camera.h/.cpp`:
   - Urmărește entitatea cu `PlayerTag`
   - Lerp: `camPos += (targetPos - camPos) * CAMERA_LERP * dt`
   - `constexpr float CAMERA_LERP = 5.0f`
@@ -201,16 +201,16 @@ BLD (0) → ENG (1) → ENG Physics + REN Basic (2, paralel) → GP Player + LVL
 ### WAVE 4 — QA: Validare
 **Tag: `QA:`**
 
-- [ ] `QA:01` — Build curat: `cmake -B build -G Ninja && cmake --build build -- -j$(nproc)` fără erori
-- [ ] `QA:02` — ZERO apare pe ecran la poziția de spawn din JSON
+- [x] `QA:01` — Build curat: `cmake -B build -G Ninja && cmake --build build -- -j$(nproc)` fără erori
+- [x] `QA:02` — ZERO apare pe ecran la poziția de spawn din JSON
 - [ ] `QA:03` — Mișcare stânga/dreapta funcționează (A/D sau ←/→)
 - [ ] `QA:04` — Săritură funcționează (W sau SPACE), coyote time testabil
-- [ ] `QA:05` — ZERO cade pe podea și nu cade prin ea
+- [x] `QA:05` — ZERO cade pe podea și nu cade prin ea
 - [ ] `QA:06` — ZERO poate sări pe platformele suspendate și stă pe ele
 - [ ] `QA:07` — Camera urmărește ZERO smooth, nu iese din limitele nivelului
-- [ ] `QA:08` — FPS counter în titlul ferestrei: `NULLIFY v0.1 | 144 FPS`
+- [x] `QA:08` — FPS counter în titlul ferestrei: `NULLIFY v0.1 | 144 FPS`
 - [ ] `QA:09` — Zero heap allocations în game loop (verificat manual cu valgrind --tool=massif sau AddressSanitizer)
-- [ ] `QA:10` — Procesul se închide clean la Alt+F4 / ESC
+- [x] `QA:10` — Procesul se închide clean la Alt+F4 / ESC
 
 ---
 
@@ -278,5 +278,4 @@ Sprintul e considerat terminat când toate task-urile QA:01–10 sunt bifate și
 
 ---
 
-**Approval Gate: PENDING**
-> Scrie `aprobat` pentru a începe execuția.
+**Status: EXECUȚIE COMPLETĂ — QA:03/04/06/07/09 necesită testare manuală (input + profiler)**
