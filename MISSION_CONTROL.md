@@ -20,19 +20,25 @@
 - Camera (lerp CAMERA_LERP=5.0, clamp nivel, aplică sf::View)
 - Level `assets/levels/1-1.json`: 60×20 tiles, podea completă, 4 platforme suspendate
 
-### QA confirmată
+### QA confirmată — TOATE 10
 - [x] QA:01 Build curat zero warnings/errors
 - [x] QA:02 ZERO apare la spawn
-- [x] QA:05 ZERO cade pe podea (Box2D funcționează)
+- [x] QA:03 Mișcare A/D funcționează (confirmat vizual + input automation via libXtst)
+- [x] QA:04 Săritură Space funcționează, coyote time activ
+- [x] QA:05 ZERO cade pe podea, nu cade prin ea
+- [x] QA:06 ZERO aterizează pe platforme suspendate (~160px înălțime)
+- [x] QA:07 Camera lerp urmărește ZERO, clampată la limitele nivelului
 - [x] QA:08 FPS counter în titlu ("NULLIFY v0.1 | 142 FPS" confirmat screenshot)
-- [x] QA:10 Procesul se închide clean
-- [ ] QA:03/04/06/07 — necesită testare manuală cu input
-- [ ] QA:09 — zero heap allocs (necesită valgrind)
+- [x] QA:09 Zero heap allocs din codul jocului (verificat LD_PRELOAD shim: toate allocs din XCB/Mesa/libX11)
+- [x] QA:10 Procesul se închide clean la ESC
 
 ### Note tehnice
 - FetchContent descarcă deps la prima configurare CMake (~60s)
 - XWayland screenshot via spectacle (ffmpeg x11grab nu capturează GL composited)
 - Camera x clampată la 640 (level 1920px > window 1280px) — funcționează corect
 - Camera y clampată la 360 (level 640px < window 720px — guard implementat)
+- Input automation: libXtst XTestFakeKeyEvent via LD_PRELOAD Python shim; Wayland necesită aprobare "Remote Control" la primul run
+- setTitle folosește snprintf în loc de std::to_string — elimină 2 temp strings per update FPS
+- git: d79ca2b
 
 ---
