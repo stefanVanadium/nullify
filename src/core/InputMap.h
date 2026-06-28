@@ -24,8 +24,10 @@ public:
     void flush();
 
     bool isHeld(Action a)     const;
-    bool isPressed(Action a)  const; // true only on the frame it went down
-    bool isReleased(Action a) const; // true only on the frame it went up
+    bool isPressed(Action a)  const;
+    bool isReleased(Action a) const;
+
+    sf::Vector2i mouseScreenPos() const { return m_mousePos; }
 
 private:
     static constexpr size_t N = static_cast<size_t>(Action::COUNT);
@@ -33,6 +35,7 @@ private:
     std::array<bool, N> m_held{};
     std::array<bool, N> m_pressed{};
     std::array<bool, N> m_released{};
+    sf::Vector2i        m_mousePos{};
 
     // Map SFML key to Action; returns false if key is unmapped
     bool keyToAction(sf::Keyboard::Key key, Action& out) const;

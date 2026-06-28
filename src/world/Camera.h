@@ -10,6 +10,9 @@ public:
     void update(float dt);
     void apply(sf::RenderWindow& window);
 
+    sf::Vector2f screenToWorld(sf::Vector2i screenPos, const sf::RenderWindow& window) const;
+    sf::Vector2f center() const { return m_view.getCenter(); }
+
 private:
     static constexpr float CAMERA_LERP = 5.0f;
 

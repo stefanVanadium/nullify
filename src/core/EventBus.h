@@ -33,6 +33,22 @@ struct AlertLevelChangedEvent {
     int newLevel;
 };
 
+struct BulletHitEvent {
+    float    x, y;        // world position of impact
+    bool     hitEnemy;
+    uint32_t enemyId;     // valid when hitEnemy = true
+};
+
+struct EnemyAlertedEvent {
+    uint32_t entityId;
+    float    sourceX, sourceY;
+};
+
+struct PlayerDamagedEvent {
+    uint32_t entityId;
+    int      damage;
+};
+
 // ---- Bus implementation ----
 
 class EventBus {

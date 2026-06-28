@@ -26,7 +26,8 @@ public:
     void update(float dt);
     void render(sf::RenderWindow& window, float alpha);
 
-    bool empty() const { return m_stack.empty(); }
+    bool         empty() const { return m_stack.empty(); }
+    IGameState*  top()   const { return m_stack.empty() ? nullptr : m_stack.back().get(); }
 
 private:
     std::vector<std::unique_ptr<IGameState>> m_stack;

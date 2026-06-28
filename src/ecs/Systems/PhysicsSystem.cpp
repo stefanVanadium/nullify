@@ -99,6 +99,21 @@ bool PhysicsSystem::isBodyGrounded(b2Body* body, float halfHeightMeters) const {
     return cb.hit;
 }
 
+struct ClearCastCallback : public b2RayCastCallback {
+    bool blocked = false;
+    float ReportFixture(b2Fixture*, const b2Vec2&, const b2Vec2&, float) override {
+        blocked = true;
+        return 0.0f;
+    }
+};
+
+bool PhysicsSystem::rayCastClear(b2Vec2 from, b2Vec2 to) const {
+    if (from.x == to.x && from.y == to.y) return true;
+    ClearCastCallback cb;
+    m_b2World.RayCast(&cb, from, to);
+    return !cb.blocked;
+}
+
 b2Body* PhysicsSystem::createEdgeChain(const b2Vec2* verts, int32 count) {
     b2BodyDef def;
     def.type = b2_staticBody;

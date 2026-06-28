@@ -47,3 +47,7 @@ void Camera::update(float dt) {
 void Camera::apply(sf::RenderWindow& window) {
     window.setView(m_view);
 }
+
+sf::Vector2f Camera::screenToWorld(sf::Vector2i screenPos, const sf::RenderWindow& window) const {
+    return window.mapPixelToCoords(screenPos, m_view);
+}

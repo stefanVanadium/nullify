@@ -1,11 +1,10 @@
 #include "TileMap.h"
-#include "ecs/Components.h"
 
-void TileMap::build(const TileMapData& data, World& world, PhysicsSystem& physics) {
-    buildCollision(data, world, physics);
-}
+static const sf::Color TILE_COLOR = sf::Color(0x1A, 0x28, 0x40, 0xFF);
+static constexpr float TILE_INSET = 1.0f; // 1px gap creates pseudo-outline
 
-void TileMap::buildCollision(const TileMapData& data, World& world, PhysicsSystem& physics) {
+void TileMap::build(const TileMapData& data, PhysicsSystem& physics) {
+    m_vertexCount = 0;
     float ts = static_cast<float>(data.tileSize);
 
     for (int row = 0; row < data.height; ++row) {
@@ -17,33 +16,22 @@ void TileMap::buildCollision(const TileMapData& data, World& world, PhysicsSyste
             float px = col * ts;
             float py = row * ts;
 
-            // Static physics body
-            b2Body* body = physics.createStaticBody(px, py, ts, ts);
+            // Static Box2D body for collision — pointer discarded; body lives in b2World
+            physics.createStaticBody(px, py, ts, ts);
 
-            // ECS entity for rendering the tile
-            uint32_t id = world.createEntity();
+            // Add quad to vertex array (slightly inset for pseudo-outline effect)
+            if (m_vertexCount + 4 > MAX_TILE_VERTS) continue;
 
-            Transform t{};
-            t.x = px; t.y = py;
-            t.prevX = px; t.prevY = py;
-            world.addComponent<Transform>(id, std::move(t));
+            float x0 = px + TILE_INSET;
+            float y0 = py + TILE_INSET;
+            float x1 = px + ts - TILE_INSET;
+            float y1 = py + ts - TILE_INSET;
 
-            Renderable r;
-            r.shape.setSize({ts, ts});
-            r.shape.setFillColor(sf::Color(0x1A, 0x28, 0x40)); // UI border color
-            r.shape.setOutlineColor(sf::Color(0x0A, 0x10, 0x20));
-            r.shape.setOutlineThickness(1.0f);
-            r.layer   = 0;
-            r.visible = true;
-            world.addComponent<Renderable>(id, std::move(r));
-
-            Collidable c{};
-            c.body = body;
-            c.w    = ts;
-            c.h    = ts;
-            world.addComponent<Collidable>(id, std::move(c));
-
-            world.addComponent<TileTag>(id, TileTag{});
+            m_vertices[m_vertexCount + 0] = {sf::Vector2f(x0, y0), TILE_COLOR};
+            m_vertices[m_vertexCount + 1] = {sf::Vector2f(x1, y0), TILE_COLOR};
+            m_vertices[m_vertexCount + 2] = {sf::Vector2f(x1, y1), TILE_COLOR};
+            m_vertices[m_vertexCount + 3] = {sf::Vector2f(x0, y1), TILE_COLOR};
+            m_vertexCount += 4;
         }
     }
 }

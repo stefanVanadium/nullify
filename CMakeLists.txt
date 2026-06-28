@@ -60,10 +60,19 @@ set(SOURCES
     src/ecs/Systems/PhysicsSystem.cpp
     src/player/Player.cpp
     src/player/PlayerStateMachine.cpp
+    src/player/WeaponSystem.cpp
     src/world/TileMap.cpp
     src/world/LevelLoader.cpp
     src/world/Camera.cpp
     src/rendering/Renderer.cpp
+    src/rendering/SpriteBatch.cpp
+    src/rendering/ShaderManager.cpp
+    src/rendering/ParallaxSystem.cpp
+    src/enemies/NavMesh.cpp
+    src/enemies/Pathfinding.cpp
+    src/enemies/AIStateMachine.cpp
+    src/enemies/EnemyManager.cpp
+    src/ui/HUD.cpp
 )
 
 add_executable(nullify ${SOURCES})

@@ -35,6 +35,8 @@ void InputMap::processEvent(const sf::Event& event) {
             m_held[i]     = false;
             m_released[i] = true;
         }
+    } else if (event.type == sf::Event::MouseMoved) {
+        m_mousePos = {event.mouseMove.x, event.mouseMove.y};
     } else if (event.type == sf::Event::MouseButtonPressed) {
         if (event.mouseButton.button == sf::Mouse::Left)
             m_pressed[static_cast<size_t>(Action::Fire)] = true,

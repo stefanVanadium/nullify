@@ -42,3 +42,58 @@
 - git: d79ca2b
 
 ---
+
+## CHECKPOINT 002 — Sprint 2 V0.2 Gameplay Loop
+**Data:** 2026-06-28
+**Status:** ✅ Build curat (debug + release), zero warnings/errors `-Wall -Wextra -Wpedantic`
+
+### Livrat
+
+**ENG — Rendering infrastructure:**
+- `SpriteBatch` — VertexArray pre-alocat (8192 quads × 4 vertices), zero heap în game loop
+- `ShaderManager` — compilare shader doar la startup, `loadAll()` + `get(ShaderType)`
+- `scanlines.frag` + `vignette.frag` — overlay screen-space, uniform `intensity` per frame
+- `ParallaxSystem` — 3 layere placeholder colored rects, speed factors 0.1/0.3/0.6
+- `Renderer` refăcut — SpriteBatch entități + draw calls: tiles(1) + entități(1) + crosshair(1) + parallax(3) + shadere(2) = **≤ 8 draw calls/frame**
+- `TileMap` refăcut — nu mai creează entități ECS; construiește sf::VertexArray static; physics bodies via `createStaticBody()` trăiesc în b2World
+
+**ENG — Foundation:**
+- `Components.h`: Renderable simplificat (size+color), adăugate EnemyTag/AIState/WaypointPath/Weapon
+- `World.h`: 11 tipuri componente (COUNT=11), template specializations complete
+- `PhysicsSystem`: adăugat `rayCastClear(from, to)` pentru LOS
+- `EventBus`: adăugate BulletHitEvent, EnemyAlertedEvent, PlayerDamagedEvent
+- `InputMap`: mouse position tracking (`mouseScreenPos()`)
+- `Camera`: `screenToWorld()` + `center()` getter
+- `GameState.h`: adăugat `top()` la GameStateManager
+
+**GP — Player systems:**
+- `WeaponSystem` — pool 1024 bullet states, zero heap; fire pe mouse click; raycast collision
+- `WeaponConfig.h` — toate valorile PHANTOM-9 constexpr
+- `PlayerStateMachine` — DASH + SLIDE cu timere, cooldown 0.8s
+- `PlayerConfig.h` — constante DASH/SLIDE adăugate
+- `Player` — EventBus subscription pentru dash/slide physics; component Weapon la spawn
+
+**AI — Enemy systems:**
+- `NavMesh` — grid walkable din collision layer, conexiuni orizontale
+- `Pathfinding` — A* zero-heap (fixed arrays), budget extern 4/frame
+- `AIStateMachine` — PATROL→ALERT→COMBAT→SEARCH cu LOS raycast + A* path cache
+- `EnemyConfig.h` — toate valorile SCOUT constexpr
+- `EnemyManager` — spawn/update max 32 enemies, navmesh, alertLevel 0-3
+
+**UI + LVL:**
+- `HUD` — HP bar (cyan→magenta la < 30%), ammo counter, alert level; font opțional
+- `LevelLoader` — returnat `LevelData`; adăugat enemy spawns + cover objects
+- `1-1.json` — 3 SCOUT enemies cu waypoints + 3 cover objects + trigger level_end
+
+**BLD:** `CMakeLists.txt` — 8 surse noi
+
+### QA confirmată
+- [x] QA:S2:01 Build zero warnings/errors — debug + release
+- [ ] QA:S2:02..10 — runtime QA pending (necesită display)
+
+### Note tehnice
+- `sf::Color` nu e literal type în SFML 2.6 — `constexpr sf::Color` → `const sf::Color`
+- Enemy bullets = instant-damage în Sprint 2; projectile enemy în Sprint 3
+- Slide nu modifică hitbox Box2D în Sprint 2
+
+---

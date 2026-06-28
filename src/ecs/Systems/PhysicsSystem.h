@@ -21,8 +21,10 @@ public:
     // Edge-chain body for tilemap rows (more efficient than per-tile boxes)
     b2Body* createEdgeChain(const b2Vec2* verts, int32 count);
 
-    // Returns true if a small downward raycast below the body hits something solid
     bool isBodyGrounded(b2Body* body, float halfHeightMeters) const;
+
+    // Returns true if the line between from and to hits no fixtures
+    bool rayCastClear(b2Vec2 from, b2Vec2 to) const;
 
     void setWorld(World* world) { m_ecsWorld = world; }
 
