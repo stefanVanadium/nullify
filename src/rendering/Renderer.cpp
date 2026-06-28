@@ -98,7 +98,7 @@ int Renderer::render(sf::RenderWindow& window,
 
     // 6. Vignette shader overlay — intensity increases at low HP
     if (sf::Shader* vg = shaders.get(ShaderType::Vignette)) {
-        float intensity = 0.7f + (1.0f - hpRatio) * 0.9f; // 0.7 full HP → 1.6 at 0 HP
+        float intensity = 0.35f + (1.0f - hpRatio) * 0.45f; // 0.35 full HP → 0.8 at 0 HP
         vg->setUniform("intensity", intensity);
         sf::RenderStates rs;
         rs.shader    = vg;
