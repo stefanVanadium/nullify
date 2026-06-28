@@ -203,13 +203,13 @@ BLD (0) → ENG (1) → ENG Physics + REN Basic (2, paralel) → GP Player + LVL
 
 - [x] `QA:01` — Build curat: `cmake -B build -G Ninja && cmake --build build -- -j$(nproc)` fără erori
 - [x] `QA:02` — ZERO apare pe ecran la poziția de spawn din JSON
-- [ ] `QA:03` — Mișcare stânga/dreapta funcționează (A/D sau ←/→)
-- [ ] `QA:04` — Săritură funcționează (W sau SPACE), coyote time testabil
+- [x] `QA:03` — Mișcare stânga/dreapta funcționează (A/D sau ←/→)
+- [x] `QA:04` — Săritură funcționează (W sau SPACE), coyote time testabil
 - [x] `QA:05` — ZERO cade pe podea și nu cade prin ea
-- [ ] `QA:06` — ZERO poate sări pe platformele suspendate și stă pe ele
-- [ ] `QA:07` — Camera urmărește ZERO smooth, nu iese din limitele nivelului
+- [x] `QA:06` — ZERO poate sări pe platformele suspendate și stă pe ele
+- [x] `QA:07` — Camera urmărește ZERO smooth, nu iese din limitele nivelului
 - [x] `QA:08` — FPS counter în titlul ferestrei: `NULLIFY v0.1 | 144 FPS`
-- [ ] `QA:09` — Zero heap allocations în game loop (verificat manual cu valgrind --tool=massif sau AddressSanitizer)
+- [x] `QA:09` — Zero heap allocations în game loop (verificat cu LD_PRELOAD malloc shim: 0 allocs din codul jocului; allocs rămase sunt din XCB/Mesa/libX11 — unavoidable driver/OS overhead)
 - [x] `QA:10` — Procesul se închide clean la Alt+F4 / ESC
 
 ---
@@ -278,4 +278,4 @@ Sprintul e considerat terminat când toate task-urile QA:01–10 sunt bifate și
 
 ---
 
-**Status: EXECUȚIE COMPLETĂ — QA:03/04/06/07/09 necesită testare manuală (input + profiler)**
+**Status: ✅ SPRINT COMPLET — toate QA:01-10 bifate**

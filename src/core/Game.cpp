@@ -8,7 +8,7 @@
 #include "world/Camera.h"
 #include "rendering/Renderer.h"
 #include <memory>
-#include <string>
+#include <cstdio>
 #include <algorithm>
 
 // PlayState — owns all simulation systems for V0.1
@@ -121,6 +121,8 @@ void Game::updateFpsTitle(float dt) {
         m_fps        = static_cast<int>(m_fpsCounter / m_fpsTimer);
         m_fpsTimer   = 0.0f;
         m_fpsCounter = 0;
-        m_window.setTitle("NULLIFY v0.1 | " + std::to_string(m_fps) + " FPS");
+        char title[48];
+        std::snprintf(title, sizeof(title), "NULLIFY v0.1 | %d FPS", m_fps);
+        m_window.setTitle(title);
     }
 }
