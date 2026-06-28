@@ -25,6 +25,7 @@ private:
     uint32_t       m_entityId = UINT32_MAX;
     bool           m_grounded = false;
 
-    float          m_coyoteTimer  = 0.0f;
-    float          m_jumpBuffer   = 0.0f;
+    float          m_coyoteTimer   = 0.0f;
+    float          m_jumpBuffer    = 0.0f;
+    bool           m_wasJumpHeld   = false; // pentru rising-edge detection la fixed-rate
 };

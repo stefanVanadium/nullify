@@ -2,8 +2,8 @@
 #include <cassert>
 
 PhysicsSystem::PhysicsSystem()
-    // Box2D: y-axis points up; gravity pulls down (negative y)
-    : m_b2World(b2Vec2(0.0f, -20.0f))
+    // y-down convention: positive y = downward (matches screen space), gravity pulls +y
+    : m_b2World(b2Vec2(0.0f, 20.0f))
 {
 }
 
@@ -32,20 +32,19 @@ void PhysicsSystem::syncToWorld(World& world) {
         transforms[i].prevX = transforms[i].x;
         transforms[i].prevY = transforms[i].y;
 
-        // Convert Box2D center (meters, y-up) → pixel top-left (y-down screen space)
+        // Box2D y-down matches screen space directly — no sign flip needed
         float halfW = collidables[i].w * 0.5f;
         float halfH = collidables[i].h * 0.5f;
         transforms[i].x = toPixels(pos.x) - halfW;
-        // Screen y: flip Box2D y-up to y-down, offset to top-left
-        transforms[i].y = -toPixels(pos.y) - halfH;
+        transforms[i].y = toPixels(pos.y) - halfH;
     }
 }
 
 b2Body* PhysicsSystem::createStaticBody(float x, float y, float w, float h) {
     b2BodyDef def;
     def.type = b2_staticBody;
-    // Box2D center in meters; pixel (x,y) is top-left, y-down
-    def.position.Set(toMeters(x + w * 0.5f), -toMeters(y + h * 0.5f));
+    // pixel (x,y) is top-left; Box2D center in meters, same y-down convention
+    def.position.Set(toMeters(x + w * 0.5f), toMeters(y + h * 0.5f));
 
     b2Body* body = m_b2World.CreateBody(&def);
 
@@ -62,7 +61,7 @@ b2Body* PhysicsSystem::createStaticBody(float x, float y, float w, float h) {
 b2Body* PhysicsSystem::createDynamicBody(float x, float y, float w, float h) {
     b2BodyDef def;
     def.type            = b2_dynamicBody;
-    def.position.Set(toMeters(x + w * 0.5f), -toMeters(y + h * 0.5f));
+    def.position.Set(toMeters(x + w * 0.5f), toMeters(y + h * 0.5f));
     def.fixedRotation   = true; // player/enemies don't tumble
     def.linearDamping   = 0.0f;
 
@@ -92,8 +91,8 @@ bool PhysicsSystem::isBodyGrounded(b2Body* body, float halfHeightMeters) const {
     if (!body) return false;
     b2Vec2 center = body->GetPosition();
     b2Vec2 start  = center;
-    // Cast slightly below the feet (0.05m margin)
-    b2Vec2 end    = { center.x, center.y - halfHeightMeters - 0.05f };
+    // Cast downward (positive y in y-down convention), just past the feet
+    b2Vec2 end    = { center.x, center.y + halfHeightMeters + 0.05f };
 
     GroundCastCallback cb;
     m_b2World.RayCast(&cb, start, end);

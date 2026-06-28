@@ -57,6 +57,10 @@ void Player::update(float dt, const InputMap& input) {
     if (input.isHeld(Action::MoveRight)) targetVx =  PhysicsSystem::toMeters(PlayerConfig::MOVE_SPEED);
     vel.x = targetVx;
 
+    // Update grounded state via raycast (y-down: feet are at +halfH from center)
+    float halfH = PhysicsSystem::toMeters(PlayerConfig::HEIGHT * 0.5f);
+    m_grounded = m_physics.isBodyGrounded(body, halfH);
+
     // Coyote time countdown
     if (m_grounded) {
         m_coyoteTimer = PlayerConfig::COYOTE_TIME;
@@ -64,23 +68,27 @@ void Player::update(float dt, const InputMap& input) {
         m_coyoteTimer = std::max(0.0f, m_coyoteTimer - dt);
     }
 
-    // Jump buffer countdown
-    if (input.isPressed(Action::Jump)) {
+    // Jump buffer — rising edge pe isHeld (persistent cross-frame), nu isPressed
+    // isPressed e valid doar pe render-frame-ul când tasta a coborât; dacă physics
+    // nu rulează exact în frame-ul acela, input-ul se pierde. isHeld rămâne true.
+    bool jumpHeld = input.isHeld(Action::Jump);
+    if (jumpHeld && !m_wasJumpHeld) {
         m_jumpBuffer = PlayerConfig::JUMP_BUFFER;
     } else {
         m_jumpBuffer = std::max(0.0f, m_jumpBuffer - dt);
     }
+    m_wasJumpHeld = jumpHeld;
 
-    // Apply jump if buffer + coyote allow
+    // Apply jump if buffer + coyote allow (upward = negative y in y-down)
     if (m_jumpBuffer > 0.0f && m_coyoteTimer > 0.0f) {
-        vel.y = PhysicsSystem::toMeters(PlayerConfig::JUMP_IMPULSE);
+        vel.y = -PhysicsSystem::toMeters(PlayerConfig::JUMP_IMPULSE);
         m_jumpBuffer  = 0.0f;
         m_coyoteTimer = 0.0f;
     }
 
-    // Clamp fall speed
-    float maxFall = -PhysicsSystem::toMeters(PlayerConfig::MAX_FALL_SPEED);
-    vel.y = std::max(vel.y, maxFall);
+    // Clamp fall speed (downward = positive y in y-down)
+    float maxFall = PhysicsSystem::toMeters(PlayerConfig::MAX_FALL_SPEED);
+    vel.y = std::min(vel.y, maxFall);
 
     body->SetLinearVelocity(vel);
 }

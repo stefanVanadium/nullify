@@ -32,7 +32,7 @@ public:
         }
         m_camera.setLevelBounds(
             60 * 32.0f,   // width in pixels
-            20 * 32.0f    // height in pixels
+            21 * 32.0f    // height in pixels
         );
     }
 
@@ -43,6 +43,7 @@ public:
         m_player.update(dt, m_input);
         m_physics.update(dt);
         m_camera.update(dt);
+
     }
 
     void render(sf::RenderWindow& window, float alpha) override {

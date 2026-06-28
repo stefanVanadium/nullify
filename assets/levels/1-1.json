@@ -4,7 +4,7 @@
     "name": "Streets — Sector Zero",
     "act": 1,
     "width": 60,
-    "height": 20,
+    "height": 21,
     "tileSize": 32,
     "tileset": "tileset_01"
   },
