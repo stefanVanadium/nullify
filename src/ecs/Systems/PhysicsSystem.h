@@ -24,7 +24,8 @@ public:
     bool isBodyGrounded(b2Body* body, float halfHeightMeters) const;
 
     // Returns true if the line between from and to hits no fixtures
-    bool rayCastClear(b2Vec2 from, b2Vec2 to) const;
+    // ignore: if non-null, that body's fixtures are skipped (use for LOS target body)
+    bool rayCastClear(b2Vec2 from, b2Vec2 to, b2Body* ignore = nullptr) const;
 
     void setWorld(World* world) { m_ecsWorld = world; }
 

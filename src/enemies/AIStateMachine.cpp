@@ -30,11 +30,16 @@ static bool checkLOS(uint32_t enemyId, uint32_t playerId,
     const auto& pt = world.getComponent<Transform>(playerId);
     float ex = et.x + EnemyConfig::SCOUT_WIDTH  * 0.5f;
     float ey = et.y + EnemyConfig::SCOUT_HEIGHT * 0.5f;
-    float px = pt.x + 12.0f; // player half-width
-    float py = pt.y + 24.0f; // player center
+    float px = pt.x + 12.0f;
+    float py = pt.y + 24.0f;
     b2Vec2 from = { PhysicsSystem::toMeters(ex), PhysicsSystem::toMeters(ey) };
     b2Vec2 to   = { PhysicsSystem::toMeters(px), PhysicsSystem::toMeters(py) };
-    return physics.rayCastClear(from, to);
+    // Ignore the player's own body — ray endpoint is inside it, so it would
+    // always block the cast even when nothing is between enemy and player.
+    b2Body* playerBody = world.hasComponent<Collidable>(playerId)
+                       ? world.getComponent<Collidable>(playerId).body
+                       : nullptr;
+    return physics.rayCastClear(from, to, playerBody);
 }
 
 void AIStateMachine::update(uint32_t       enemyId,

@@ -2,7 +2,9 @@
 #include "WeaponConfig.h"
 #include "ecs/Components.h"
 #include "core/EventBus.h"
+#include "enemies/EnemyConfig.h"
 #include <cmath>
+#include <algorithm>
 
 WeaponSystem::WeaponSystem(World& world, PhysicsSystem& physics)
     : m_world(world)
@@ -16,7 +18,7 @@ void WeaponSystem::fire(sf::Vector2f from, sf::Vector2f target, uint32_t playerE
     if (!m_world.hasComponent<Weapon>(playerEntity)) return;
 
     auto& w = m_world.getComponent<Weapon>(playerEntity);
-    if (w.cooldown > 0.0f || w.ammo <= 0) return;
+    if (w.cooldown > 0.0f) return;
 
     float dx = target.x - from.x;
     float dy = target.y - from.y;
@@ -26,7 +28,6 @@ void WeaponSystem::fire(sf::Vector2f from, sf::Vector2f target, uint32_t playerE
     dx /= len;
     dy /= len;
 
-    // Circular overwrite when pool is full (keep newest)
     BulletState& b = m_bullets[m_nextSlot];
     m_nextSlot = (m_nextSlot + 1) % MAX_BULLETS;
 
@@ -39,8 +40,7 @@ void WeaponSystem::fire(sf::Vector2f from, sf::Vector2f target, uint32_t playerE
     b.maxDist    = WeaponConfig::BULLET_MAX_DIST;
     b.active     = true;
 
-    w.cooldown = WeaponConfig::FIRE_COOLDOWN;
-    --w.ammo;
+    w.cooldown  = WeaponConfig::FIRE_COOLDOWN;
     w.facingDir = (dx >= 0.0f) ? 1.0f : -1.0f;
 }
 
@@ -65,7 +65,27 @@ void WeaponSystem::update(float dt) {
         b2Vec2 to   = { PhysicsSystem::toMeters(nx), PhysicsSystem::toMeters(ny) };
 
         if (!m_physics.rayCastClear(from, to)) {
-            EventBus::emit(BulletHitEvent{ b.x, b.y, false, 0 });
+            // Check if we hit an enemy — endpoint (nx,ny) is inside a fixture
+            bool     hitEnemy = false;
+            uint32_t hitId    = static_cast<uint32_t>(MAX_ENTITIES);
+            for (uint32_t eid = 0; eid < MAX_ENTITIES; ++eid) {
+                if (!m_world.isAlive(eid) || !m_world.hasComponent<EnemyTag>(eid)) continue;
+                if (!m_world.hasComponent<Transform>(eid))  continue;
+                const auto& tf = m_world.getComponent<Transform>(eid);
+                float cx = tf.x + EnemyConfig::SCOUT_WIDTH  * 0.5f;
+                float cy = tf.y + EnemyConfig::SCOUT_HEIGHT * 0.5f;
+                float ex2 = cx - nx, ey2 = cy - ny;
+                if (ex2*ex2 + ey2*ey2 < EnemyConfig::SCOUT_WIDTH * EnemyConfig::SCOUT_WIDTH) {
+                    if (m_world.hasComponent<Health>(eid)) {
+                        auto& hp = m_world.getComponent<Health>(eid);
+                        hp.current = std::max(0, hp.current - WeaponConfig::BULLET_DAMAGE);
+                    }
+                    hitEnemy = true;
+                    hitId    = eid;
+                    break;
+                }
+            }
+            EventBus::emit(BulletHitEvent{ nx, ny, hitEnemy, hitId });
             b.active = false;
             continue;
         }

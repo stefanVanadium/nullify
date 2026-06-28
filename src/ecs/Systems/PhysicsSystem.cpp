@@ -100,16 +100,19 @@ bool PhysicsSystem::isBodyGrounded(b2Body* body, float halfHeightMeters) const {
 }
 
 struct ClearCastCallback : public b2RayCastCallback {
-    bool blocked = false;
-    float ReportFixture(b2Fixture*, const b2Vec2&, const b2Vec2&, float) override {
+    bool    blocked    = false;
+    b2Body* ignoreBody = nullptr;
+    float ReportFixture(b2Fixture* f, const b2Vec2&, const b2Vec2&, float) override {
+        if (f->GetBody() == ignoreBody) return -1.0f; // skip this fixture, continue ray
         blocked = true;
-        return 0.0f;
+        return 0.0f; // stop at first real hit
     }
 };
 
-bool PhysicsSystem::rayCastClear(b2Vec2 from, b2Vec2 to) const {
+bool PhysicsSystem::rayCastClear(b2Vec2 from, b2Vec2 to, b2Body* ignore) const {
     if (from.x == to.x && from.y == to.y) return true;
     ClearCastCallback cb;
+    cb.ignoreBody = ignore;
     m_b2World.RayCast(&cb, from, to);
     return !cb.blocked;
 }
