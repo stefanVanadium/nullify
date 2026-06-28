@@ -350,26 +350,26 @@ Dark synthwave + industrial electronic. Tempo se adaptează la starea jocului:
 
 ## 09. DEVELOPMENT ROADMAP
 
-### Luna 1 — Foundation
-- [ ] Window + game loop + delta time fix
-- [ ] CMakeLists.txt cu SFML + Box2D
-- [ ] Player movement basic (alergat, sărit, căzut)
-- [ ] Tilemap loader din JSON
-- [ ] Camera urmărire player cu lerp
+### Luna 1 — Foundation ✅ Sprint 1 (v0.1)
+- [x] Window + game loop + delta time fix
+- [x] CMakeLists.txt cu SFML + Box2D
+- [x] Player movement basic (alergat, sărit, căzut)
+- [x] Tilemap loader din JSON
+- [x] Camera urmărire player cu lerp
 
-### Luna 2 — Combat Core
-- [ ] Weapon system — pistol funcțional
-- [ ] Bullet physics cu Box2D
-- [ ] Enemy basic (SCOUT) cu state machine
-- [ ] Ragdoll la moarte
-- [ ] HUD basic: HP bar, ammo counter
+### Luna 2 — Combat Core ✅ Sprint 2 (v0.2) — ragdoll pendent
+- [x] Weapon system — pistol funcțional (PHANTOM-9, pool 1024 bullets)
+- [x] Bullet physics cu Box2D (raycast collision, BulletHitEvent)
+- [x] Enemy basic (SCOUT) cu state machine (PATROL→ALERT→COMBAT→SEARCH + A*)
+- [ ] Ragdoll la moarte — enemies dispar instant; Box2D joints ragdoll neimplementat
+- [x] HUD basic: HP bar, ammo counter (+ alert level indicator)
 
-### Luna 3 — Visual Polish
-- [ ] Shader manager + neon glow
-- [ ] Particle system — bullet impact, blood
-- [ ] Parallax background system
-- [ ] Chromatic aberration la damage
-- [ ] Scanlines overlay
+### Luna 3 — Visual Polish ✅ Sprint 3 (v0.3)
+- [x] Shader manager + neon glow (bloom 12-tap via RenderTexture + ShaderManager)
+- [x] Particle system — bullet impact (cyan sparks) + blood (cyan/red), pool 4096
+- [x] Parallax background system (3 layere, speed factors 0.1/0.3/0.6)
+- [x] Chromatic aberration la damage (0.8s decay, integrat în neon_glow.frag)
+- [x] Scanlines overlay (permanent, GLSL)
 
 ### Luna 4 — Gameplay Depth
 - [ ] Hacking minigame complet
