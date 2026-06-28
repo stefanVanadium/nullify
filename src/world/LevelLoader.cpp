@@ -90,8 +90,18 @@ std::optional<LevelData> LevelLoader::load(const std::string& path,
             obj.y = static_cast<float>(co.value("y", 0) * data.tileSize);
             obj.w = static_cast<float>(co.value("w", 1) * data.tileSize);
             obj.h = static_cast<float>(co.value("h", 1) * data.tileSize);
-            // Create physics body for cover — pointer discarded, body lives in b2World
             physics.createStaticBody(obj.x, obj.y, obj.w, obj.h);
+
+            // ECS entity for rendering — static, no Collidable needed
+            uint32_t eid = world.createEntity();
+            Transform t{}; t.x = obj.x; t.y = obj.y; t.prevX = obj.x; t.prevY = obj.y;
+            world.addComponent<Transform>(eid, std::move(t));
+            Renderable r{};
+            r.size  = {obj.w, obj.h};
+            r.color = sf::Color(0x1A, 0x28, 0x40, 0xFF);
+            r.layer = 5;
+            world.addComponent<Renderable>(eid, std::move(r));
+
             data.coverObjects.push_back(obj);
         }
     }
