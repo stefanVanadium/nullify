@@ -41,6 +41,7 @@ int Renderer::render(sf::RenderWindow&    window,
                      const WeaponSystem&  weapon,
                      const EnemyManager&  enemies,
                      ParticleSystem&      particles,
+                     const RagdollSystem& ragdolls,
                      const RenderEffects& effects) {
     int drawCalls = 0;
 
@@ -88,6 +89,7 @@ int Renderer::render(sf::RenderWindow&    window,
     }
     weapon.batchDraw(m_entityBatch);
     enemies.batchDrawBullets(m_entityBatch);
+    ragdolls.render(m_entityBatch);
     particles.batchDraw(m_entityBatch);
     drawCalls += m_entityBatch.end(m_sceneRT);
 

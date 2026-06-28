@@ -30,6 +30,12 @@ public:
     // Safely removes a body from b2World — call before destroyEntity on physics entities
     void destroyBody(b2Body* body);
 
+    // Ragdoll joint factory — limited revolute joint between two bodies
+    b2Joint* createRevoluteJoint(b2Body* bodyA, b2Body* bodyB,
+                                  b2Vec2 anchorWorld,
+                                  float lowerAngleDeg, float upperAngleDeg);
+    void destroyJoint(b2Joint* joint);
+
     void setWorld(World* world) { m_ecsWorld = world; }
 
 private:

@@ -27,6 +27,7 @@ public:
                       int width, int height, int tileSize);
 
     uint32_t spawnScout(float x, float y, const WaypointPath& waypoints);
+    uint32_t spawnEnemy(EnemyType type, float x, float y, const WaypointPath& waypoints);
 
     void update(float dt);
 
@@ -49,9 +50,11 @@ private:
     EventBus::Handle m_bulletHitHandle = 0;
     EventBus::Handle m_enemyDiedHandle = 0;
     EventBus::Handle m_enemyFireHandle = 0;
+    EventBus::Handle m_empHandle       = 0;
 
     void onBulletHit(const BulletHitEvent& e);
     void onEnemyDied(const EnemyDiedEvent& e);
     void onEnemyFire(const EnemyFireEvent& e);
+    void onEMPDetonated(const EMPDetonatedEvent& e);
     void updateEnemyBullets(float dt);
 };

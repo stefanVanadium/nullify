@@ -6,6 +6,7 @@
 #include "ShaderManager.h"
 #include "ParallaxSystem.h"
 #include "ParticleSystem.h"
+#include "RagdollSystem.h"
 #include "world/TileMap.h"
 #include "player/WeaponSystem.h"
 
@@ -33,6 +34,7 @@ public:
                const WeaponSystem&   weapon,
                const EnemyManager&   enemies,
                ParticleSystem&       particles,
+               const RagdollSystem&  ragdolls,
                const RenderEffects&  effects);
 
 private:

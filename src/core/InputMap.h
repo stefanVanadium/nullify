@@ -3,14 +3,17 @@
 #include <array>
 
 enum class Action : uint8_t {
-    MoveLeft  = 0,
-    MoveRight = 1,
-    Jump      = 2,
-    Crouch    = 3,
-    Dash      = 4,
-    Hack      = 5,
-    Fire      = 6,
-    COUNT     = 7
+    MoveLeft    = 0,
+    MoveRight   = 1,
+    Jump        = 2,
+    Crouch      = 3,
+    Dash        = 4,
+    Hack        = 5,
+    Fire        = 6,
+    Takedown    = 7,
+    WeaponNext  = 8,
+    WeaponPrev  = 9,
+    COUNT       = 10
 };
 
 // Single source of truth for input state. Only class that touches sf::Keyboard/Mouse.

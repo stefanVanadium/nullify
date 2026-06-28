@@ -121,6 +121,23 @@ void PhysicsSystem::destroyBody(b2Body* body) {
     if (body) m_b2World.DestroyBody(body);
 }
 
+b2Joint* PhysicsSystem::createRevoluteJoint(b2Body* bodyA, b2Body* bodyB,
+                                              b2Vec2 anchorWorld,
+                                              float lowerAngleDeg, float upperAngleDeg) {
+    const float deg2rad = 3.14159265f / 180.0f;
+    b2RevoluteJointDef def;
+    def.Initialize(bodyA, bodyB, anchorWorld);
+    def.enableLimit   = true;
+    def.lowerAngle    = lowerAngleDeg * deg2rad;
+    def.upperAngle    = upperAngleDeg * deg2rad;
+    def.collideConnected = false;
+    return m_b2World.CreateJoint(&def);
+}
+
+void PhysicsSystem::destroyJoint(b2Joint* joint) {
+    if (joint) m_b2World.DestroyJoint(joint);
+}
+
 b2Body* PhysicsSystem::createEdgeChain(const b2Vec2* verts, int32 count) {
     b2BodyDef def;
     def.type = b2_staticBody;

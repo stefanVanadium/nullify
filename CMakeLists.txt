@@ -75,7 +75,11 @@ set(SOURCES
     src/enemies/AIStateMachine.cpp
     src/enemies/EnemyManager.cpp
     src/ui/HUD.cpp
+    src/rendering/RagdollSystem.cpp
+    src/player/StealthSystem.cpp
 )
+
+
 
 add_executable(nullify ${SOURCES})
 

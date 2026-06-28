@@ -63,6 +63,47 @@ struct HackFailedEvent {
     uint32_t targetId;
 };
 
+struct HackMinigameStartEvent {
+    int      tier;
+    uint32_t hackableId;
+};
+
+struct CorpseFoundEvent {
+    uint32_t enemyId;
+    float    x, y;
+};
+
+struct SoundEmittedEvent {
+    float x, y;
+    float radius;
+    bool  isShot;
+};
+
+struct TakedownEvent {
+    uint32_t targetId;
+};
+
+struct EnemyHackedEvent {
+    uint32_t targetId;
+    float    duration;
+};
+
+struct WeaponSwitchedEvent {
+    int newWeaponTypeInt;  // cast to WeaponType by receiver
+};
+
+struct HackBlockedEvent {
+    uint32_t blockerId;
+};
+
+struct EMPDetonatedEvent {
+    float x, y, radius;
+};
+
+struct CoverDestroyedEvent {
+    uint32_t coverId;
+};
+
 // ---- Bus implementation ----
 
 class EventBus {

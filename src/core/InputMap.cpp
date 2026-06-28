@@ -14,6 +14,8 @@ bool InputMap::keyToAction(sf::Keyboard::Key key, Action& out) const {
         case sf::Keyboard::S:     case sf::Keyboard::Down:  out = Action::Crouch;    return true;
         case sf::Keyboard::LShift:                          out = Action::Dash;      return true;
         case sf::Keyboard::E:                               out = Action::Hack;      return true;
+        case sf::Keyboard::F:                               out = Action::Takedown;  return true;
+        case sf::Keyboard::Q:                               out = Action::WeaponPrev;return true;
         default: return false;
     }
 }
@@ -35,6 +37,11 @@ void InputMap::processEvent(const sf::Event& event) {
             m_held[i]     = false;
             m_released[i] = true;
         }
+    } else if (event.type == sf::Event::MouseWheelScrolled) {
+        if (event.mouseWheelScroll.delta > 0.f)
+            m_pressed[static_cast<size_t>(Action::WeaponNext)] = true;
+        else if (event.mouseWheelScroll.delta < 0.f)
+            m_pressed[static_cast<size_t>(Action::WeaponPrev)] = true;
     } else if (event.type == sf::Event::MouseMoved) {
         m_mousePos = {event.mouseMove.x, event.mouseMove.y};
     } else if (event.type == sf::Event::MouseButtonPressed) {

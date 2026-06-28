@@ -9,19 +9,25 @@
 static constexpr size_t MAX_ENTITIES = 1024;
 
 enum class ComponentType : uint8_t {
-    Transform    = 0,
-    Velocity     = 1,
-    Health       = 2,
-    Renderable   = 3,
-    Collidable   = 4,
-    PlayerTag    = 5,
-    TileTag      = 6,
-    EnemyTag     = 7,
-    AIState      = 8,
-    WaypointPath = 9,
-    Weapon       = 10,
-    HackableTag  = 11,
-    COUNT        = 12
+    Transform      = 0,
+    Velocity       = 1,
+    Health         = 2,
+    Renderable     = 3,
+    Collidable     = 4,
+    PlayerTag      = 5,
+    TileTag        = 6,
+    EnemyTag       = 7,
+    AIState        = 8,
+    WaypointPath   = 9,
+    Weapon         = 10,
+    HackableTag    = 11,
+    ConeOfVision   = 12,
+    HearingRadius  = 13,
+    StealthBody    = 14,
+    SilentTakedown = 15,
+    CoverTag       = 16,
+    PickupTag      = 17,
+    COUNT          = 18
 };
 
 class World {
@@ -49,18 +55,24 @@ private:
     std::array<bool,        MAX_ENTITIES> m_alive{};
     std::array<std::bitset<static_cast<size_t>(ComponentType::COUNT)>, MAX_ENTITIES> m_mask{};
 
-    std::array<Transform,    MAX_ENTITIES> m_transforms{};
-    std::array<Velocity,     MAX_ENTITIES> m_velocities{};
-    std::array<Health,       MAX_ENTITIES> m_healths{};
-    std::array<Renderable,   MAX_ENTITIES> m_renderables{};
-    std::array<Collidable,   MAX_ENTITIES> m_collidables{};
-    std::array<PlayerTag,    MAX_ENTITIES> m_playerTags{};
-    std::array<TileTag,      MAX_ENTITIES> m_tileTags{};
-    std::array<EnemyTag,     MAX_ENTITIES> m_enemyTags{};
-    std::array<AIState,      MAX_ENTITIES> m_aiStates{};
-    std::array<WaypointPath, MAX_ENTITIES> m_waypointPaths{};
-    std::array<Weapon,       MAX_ENTITIES> m_weapons{};
-    std::array<HackableTag,  MAX_ENTITIES> m_hackableTags{};
+    std::array<Transform,      MAX_ENTITIES> m_transforms{};
+    std::array<Velocity,       MAX_ENTITIES> m_velocities{};
+    std::array<Health,         MAX_ENTITIES> m_healths{};
+    std::array<Renderable,     MAX_ENTITIES> m_renderables{};
+    std::array<Collidable,     MAX_ENTITIES> m_collidables{};
+    std::array<PlayerTag,      MAX_ENTITIES> m_playerTags{};
+    std::array<TileTag,        MAX_ENTITIES> m_tileTags{};
+    std::array<EnemyTag,       MAX_ENTITIES> m_enemyTags{};
+    std::array<AIState,        MAX_ENTITIES> m_aiStates{};
+    std::array<WaypointPath,   MAX_ENTITIES> m_waypointPaths{};
+    std::array<Weapon,         MAX_ENTITIES> m_weapons{};
+    std::array<HackableTag,    MAX_ENTITIES> m_hackableTags{};
+    std::array<ConeOfVision,   MAX_ENTITIES> m_coneOfVisions{};
+    std::array<HearingRadius,  MAX_ENTITIES> m_hearingRadii{};
+    std::array<StealthBody,    MAX_ENTITIES> m_stealthBodies{};
+    std::array<SilentTakedown, MAX_ENTITIES> m_silentTakedowns{};
+    std::array<CoverTag,       MAX_ENTITIES> m_coverTags{};
+    std::array<PickupTag,      MAX_ENTITIES> m_pickupTags{};
 
     size_t   m_aliveCount = 0;
     uint32_t m_nextId     = 0;
@@ -79,7 +91,13 @@ template<> inline void World::addComponent<EnemyTag>(uint32_t id, EnemyTag&& c) 
 template<> inline void World::addComponent<AIState>(uint32_t id, AIState&& c)         { m_aiStates[id]      = std::move(c); m_mask[id].set(CT(ComponentType::AIState)); }
 template<> inline void World::addComponent<WaypointPath>(uint32_t id, WaypointPath&& c){ m_waypointPaths[id] = std::move(c); m_mask[id].set(CT(ComponentType::WaypointPath)); }
 template<> inline void World::addComponent<Weapon>(uint32_t id, Weapon&& c)           { m_weapons[id]       = std::move(c); m_mask[id].set(CT(ComponentType::Weapon)); }
-template<> inline void World::addComponent<HackableTag>(uint32_t id, HackableTag&& c) { m_hackableTags[id]  = std::move(c); m_mask[id].set(CT(ComponentType::HackableTag)); }
+template<> inline void World::addComponent<HackableTag>(uint32_t id, HackableTag&& c)       { m_hackableTags[id]    = std::move(c); m_mask[id].set(CT(ComponentType::HackableTag)); }
+template<> inline void World::addComponent<ConeOfVision>(uint32_t id, ConeOfVision&& c)     { m_coneOfVisions[id]   = std::move(c); m_mask[id].set(CT(ComponentType::ConeOfVision)); }
+template<> inline void World::addComponent<HearingRadius>(uint32_t id, HearingRadius&& c)   { m_hearingRadii[id]    = std::move(c); m_mask[id].set(CT(ComponentType::HearingRadius)); }
+template<> inline void World::addComponent<StealthBody>(uint32_t id, StealthBody&& c)       { m_stealthBodies[id]   = std::move(c); m_mask[id].set(CT(ComponentType::StealthBody)); }
+template<> inline void World::addComponent<SilentTakedown>(uint32_t id, SilentTakedown&& c) { m_silentTakedowns[id] = std::move(c); m_mask[id].set(CT(ComponentType::SilentTakedown)); }
+template<> inline void World::addComponent<CoverTag>(uint32_t id, CoverTag&& c)             { m_coverTags[id]       = std::move(c); m_mask[id].set(CT(ComponentType::CoverTag)); }
+template<> inline void World::addComponent<PickupTag>(uint32_t id, PickupTag&& c)           { m_pickupTags[id]      = std::move(c); m_mask[id].set(CT(ComponentType::PickupTag)); }
 
 // ---------- getComponent specializations ----------
 
@@ -94,7 +112,13 @@ template<> inline EnemyTag&     World::getComponent<EnemyTag>(uint32_t id)     {
 template<> inline AIState&      World::getComponent<AIState>(uint32_t id)      { return m_aiStates[id]; }
 template<> inline WaypointPath& World::getComponent<WaypointPath>(uint32_t id) { return m_waypointPaths[id]; }
 template<> inline Weapon&       World::getComponent<Weapon>(uint32_t id)       { return m_weapons[id]; }
-template<> inline HackableTag&  World::getComponent<HackableTag>(uint32_t id)  { return m_hackableTags[id]; }
+template<> inline HackableTag&    World::getComponent<HackableTag>(uint32_t id)    { return m_hackableTags[id]; }
+template<> inline ConeOfVision&   World::getComponent<ConeOfVision>(uint32_t id)   { return m_coneOfVisions[id]; }
+template<> inline HearingRadius&  World::getComponent<HearingRadius>(uint32_t id)  { return m_hearingRadii[id]; }
+template<> inline StealthBody&    World::getComponent<StealthBody>(uint32_t id)    { return m_stealthBodies[id]; }
+template<> inline SilentTakedown& World::getComponent<SilentTakedown>(uint32_t id) { return m_silentTakedowns[id]; }
+template<> inline CoverTag&       World::getComponent<CoverTag>(uint32_t id)       { return m_coverTags[id]; }
+template<> inline PickupTag&      World::getComponent<PickupTag>(uint32_t id)      { return m_pickupTags[id]; }
 
 template<> inline const Transform&    World::getComponent<Transform>(uint32_t id)    const { return m_transforms[id]; }
 template<> inline const Velocity&     World::getComponent<Velocity>(uint32_t id)     const { return m_velocities[id]; }
@@ -104,7 +128,12 @@ template<> inline const Collidable&   World::getComponent<Collidable>(uint32_t i
 template<> inline const EnemyTag&     World::getComponent<EnemyTag>(uint32_t id)     const { return m_enemyTags[id]; }
 template<> inline const AIState&      World::getComponent<AIState>(uint32_t id)      const { return m_aiStates[id]; }
 template<> inline const WaypointPath& World::getComponent<WaypointPath>(uint32_t id) const { return m_waypointPaths[id]; }
-template<> inline const Weapon&       World::getComponent<Weapon>(uint32_t id)       const { return m_weapons[id]; }
+template<> inline const Weapon&        World::getComponent<Weapon>(uint32_t id)        const { return m_weapons[id]; }
+template<> inline const ConeOfVision&  World::getComponent<ConeOfVision>(uint32_t id)  const { return m_coneOfVisions[id]; }
+template<> inline const HearingRadius& World::getComponent<HearingRadius>(uint32_t id) const { return m_hearingRadii[id]; }
+template<> inline const StealthBody&   World::getComponent<StealthBody>(uint32_t id)   const { return m_stealthBodies[id]; }
+template<> inline const CoverTag&      World::getComponent<CoverTag>(uint32_t id)      const { return m_coverTags[id]; }
+template<> inline const PickupTag&     World::getComponent<PickupTag>(uint32_t id)     const { return m_pickupTags[id]; }
 
 // ---------- hasComponent specializations ----------
 
@@ -119,7 +148,13 @@ template<> inline bool World::hasComponent<EnemyTag>(uint32_t id)     const { re
 template<> inline bool World::hasComponent<AIState>(uint32_t id)      const { return m_mask[id].test(CT(ComponentType::AIState)); }
 template<> inline bool World::hasComponent<WaypointPath>(uint32_t id) const { return m_mask[id].test(CT(ComponentType::WaypointPath)); }
 template<> inline bool World::hasComponent<Weapon>(uint32_t id)       const { return m_mask[id].test(CT(ComponentType::Weapon)); }
-template<> inline bool World::hasComponent<HackableTag>(uint32_t id)  const { return m_mask[id].test(CT(ComponentType::HackableTag)); }
+template<> inline bool World::hasComponent<HackableTag>(uint32_t id)    const { return m_mask[id].test(CT(ComponentType::HackableTag)); }
+template<> inline bool World::hasComponent<ConeOfVision>(uint32_t id)   const { return m_mask[id].test(CT(ComponentType::ConeOfVision)); }
+template<> inline bool World::hasComponent<HearingRadius>(uint32_t id)  const { return m_mask[id].test(CT(ComponentType::HearingRadius)); }
+template<> inline bool World::hasComponent<StealthBody>(uint32_t id)    const { return m_mask[id].test(CT(ComponentType::StealthBody)); }
+template<> inline bool World::hasComponent<SilentTakedown>(uint32_t id) const { return m_mask[id].test(CT(ComponentType::SilentTakedown)); }
+template<> inline bool World::hasComponent<CoverTag>(uint32_t id)       const { return m_mask[id].test(CT(ComponentType::CoverTag)); }
+template<> inline bool World::hasComponent<PickupTag>(uint32_t id)      const { return m_mask[id].test(CT(ComponentType::PickupTag)); }
 
 // ---------- getComponents specializations ----------
 

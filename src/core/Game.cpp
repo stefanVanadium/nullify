@@ -12,6 +12,8 @@
 #include "rendering/ParallaxSystem.h"
 #include "rendering/ShaderManager.h"
 #include "rendering/ParticleSystem.h"
+#include "rendering/RagdollSystem.h"
+#include "player/StealthSystem.h"
 #include "enemies/EnemyManager.h"
 #include "ui/HUD.h"
 #include "ecs/Components.h"
@@ -30,6 +32,8 @@ public:
         , m_weapon(m_world, m_physics)
         , m_camera(m_world)
         , m_enemyMgr(m_world, m_physics)
+        , m_ragdolls(m_physics)
+        , m_stealth(m_world, m_physics)
     {
         m_damagedHandle = EventBus::on<PlayerDamagedEvent>([this](const PlayerDamagedEvent&) {
             m_caTimer = 0.8f;
@@ -82,10 +86,16 @@ public:
         m_physics.update(dt);
         m_camera.update(dt);
         m_enemyMgr.update(dt);
+        m_ragdolls.update(dt);
         m_particles.update(dt);
 
         uint32_t pid = m_world.findPlayer();
+        m_stealth.update(dt, pid, m_input);
         if (pid != static_cast<uint32_t>(MAX_ENTITIES)) {
+            // Weapon scroll
+            if (m_input.isPressed(Action::WeaponNext)) m_weapon.switchWeapon(+1);
+            if (m_input.isPressed(Action::WeaponPrev)) m_weapon.switchWeapon(-1);
+
             if (m_input.isHeld(Action::Fire)) {
                 sf::Vector2f mouseW = m_camera.screenToWorld(m_input.mouseScreenPos(), m_window);
                 if (m_world.hasComponent<Transform>(pid)) {
@@ -119,7 +129,7 @@ public:
         m_lastDrawCalls = m_renderer.render(window, m_world, alpha, hpRatio,
                                             mouseWorld, m_tileMap,
                                             m_parallax, m_shaders, m_weapon,
-                                            m_enemyMgr, m_particles, fx);
+                                            m_enemyMgr, m_particles, m_ragdolls, fx);
 
         if (pid != static_cast<uint32_t>(MAX_ENTITIES)
             && m_world.hasComponent<Health>(pid)
@@ -152,6 +162,8 @@ private:
     ShaderManager     m_shaders;
     Renderer          m_renderer;
     ParticleSystem    m_particles;
+    RagdollSystem     m_ragdolls;
+    StealthSystem     m_stealth;
     HUD               m_hud;
     int               m_lastDrawCalls = 0;
     float             m_caTimer       = 0.f;

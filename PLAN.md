@@ -1,109 +1,253 @@
-# PLAN.md — NULLIFY Sprint 3
+# PLAN.md — NULLIFY Sprint 4
 > Status: **ÎN EXECUȚIE**
-> Bază: Sprint 2 complet (v0.2) · GDD v0.1 · Luna 3 — Visual Polish
+> Bază: Sprint 3 complet (v0.3) · GDD v0.1 · Luna 4 — Gameplay Depth
 
 ---
 
-## OBIECTIVE SPRINT 3
+## OBIECTIVE SPRINT 4
 
-Sprint 3 livrează feedback vizual real de combat + fundația hack-ului:
-- **ParticleSystem** — scântei la impact glonț, sânge la moarte inamic
-- **neon_glow.frag** — bloom pe pixelii luminoși via RenderTexture
-- **chromatic_aberration** — integrat în neon_glow shader (uniform `caIntensity`)
-- **glitch.frag** — overlay hack mode cu distorsionare și tint violet
-- **HackSystem** — press E lângă terminal → 3s progres → HackSuccessEvent
-- **Enemy projectile bullets** — SCOUT trage gloanțe reale (nu instant damage)
-- **HUD hack overlay** — bara de progres + text `[HACKING...]`
+Luna 4 transformă demo-ul tehnic într-un joc real cu depth mecanic complet:
+
+1. **Hacking minigame complet** — Tier 1/2/3 interactive (GDD §03)
+2. **Toate tipurile de inamici** — 7 tipuri noi pe lângă SCOUT (GDD §04)
+3. **Stealth system** — cone of vision, hearing, corpuri, takedown silențios
+4. **Toate armele** — 5 arme noi pe lângă PHANTOM-9 (GDD §03)
+5. **Level 1-1 → 1-3 complet** — 1-2 și 1-3 JSON cu design conform GDD
+
+**Starea inițială:**
+- SCOUT enemy ✅, HackSystem fundație ✅, PHANTOM-9 ✅, 1-1.json ✅
+- Ragdoll la moarte ❌ (pendent din Luna 2 — blocat de joints Box2D)
+- Hacking minigame ❌, stealth ❌, inamici multipli ❌, arme 5/6 ❌, 1-2/1-3 ❌
 
 ---
 
-## WAVE 1 — ENG + REN (paralel)
+## WAVE 1 — ENG (fundație pentru sisteme noi) ✅
 
-### ENG:03 — ParticleSystem
-**Fișiere noi:** `src/rendering/ParticleSystem.cpp/.h`
-- Pool 4096 `Particle` structs (fixed array, zero heap)
-- `spawnBulletImpact(x,y)` → 6 scântei cyan (#00FFEE), viteză random outward, 0.4s viață
-- `spawnBlood(x,y)` → 5 particule #00FFEE/#FF0038 alternant, 0.5s viață, bias downward
-- `update(float dt)` → avansează poziție, decay life, fade alpha
-- `batchDraw(SpriteBatch&)` → 1 quad per particulă activă
-- Subscrie la `BulletHitEvent` + `EnemyDiedEvent` în constructor; unsubscribe în destructor
+### ENG:04 — Ragdoll System (datorie tehnică din Sprint 2)
+**Fișiere noi:** `src/rendering/RagdollSystem.cpp/.h`
+**Fișiere modificate:** `src/ecs/Components.h`, `src/enemies/EnemyManager.cpp`
 
-### REN:02 — Bloom + CA + Glitch via RenderTexture
-**Fișiere noi:** `assets/shaders/neon_glow.frag`, `assets/shaders/glitch.frag`
-**Fișiere modificate:** `src/rendering/ShaderManager.h/.cpp`, `src/rendering/Renderer.h/.cpp`
+- `struct Ragdoll { b2Body* bodies[6]; b2Joint* joints[5]; bool active; float lifetime; }` în Components.h
+- La `EnemyDiedEvent`: creează 6 corpuri Box2D (torso, cap, 2x braț, 2x picior) cu joints revolute limitate
+- Aplică impulse de la direcția glonțului (din event)
+- Lifetime 4.0s → fade out alpha → deactivate bodies → remove entity
+- `RagdollSystem::update(float dt)` iterează ragdoll-uri active, avansează timer, fade
+- `RagdollSystem::render(SpriteBatch&)` desenează 6 dreptunghiuri per ragdoll (proxy vizual, fără sprite final)
+- Subscrie `EnemyDiedEvent` în constructor
 
-**Pipeline nou:**
+### ENG:05 — Stealth Perception Components (arhitectură)
+**Fișiere modificate:** `src/ecs/Components.h`, `src/core/EventBus.h`
+
+Componente noi în Components.h:
+```cpp
+struct ConeOfVision  { float range; float halfAngle; bool playerVisible; };
+struct HearingRadius { float range; bool alertedBySound; };
+struct StealthBody   { bool isCorpse; bool corpseFound; float corpseTimer; };
+struct SilentTakedown{ bool vulnerable; };
 ```
-Scene → m_sceneRT (RenderTexture)
-m_sceneRT → neon_glow.frag (bloom + CA) → window
-Scanlines + Vignette + Glitch → window overlays
+
+Evenimente noi în EventBus.h:
+```cpp
+struct CorpseFoundEvent   { uint32_t enemyId; float x, y; };
+struct SoundEmittedEvent  { float x, y; float radius; bool isShot; };
+struct TakedownEvent      { uint32_t targetId; };
+struct EnemyHackedEvent   { uint32_t targetId; float duration; };
+struct WeaponSwitchedEvent{ WeaponType newWeapon; };
+struct HackMinigameStartEvent { int tier; uint32_t hackableId; };
+struct HackBlockedEvent   { uint32_t blockerId; };
+struct EMPDetonatedEvent  { float x, y, radius; };
+struct CoverDestroyedEvent{ uint32_t coverId; };
 ```
 
-- `neon_glow.frag`: 12-tap bloom pe pixeli cu brightness > 0.55 + chromatic aberration via uniform `caIntensity`
-- `glitch.frag`: row displacement noise + violet tint, uniform `intensity` + `time`
-- `Renderer` adaugă `sf::RenderTexture m_sceneRT`, `sf::Sprite m_sceneSprite`, `SpriteBatch m_particleBatch`
-- `struct RenderEffects { float caIntensity; float hackIntensity; float gameTime; }`
-- `ShaderType`: NeonGlow=2, Glitch=3, COUNT=4
-- Draw call budget: parallax(3) + tiles(1) + entities+bullets+particles(1) + crosshair(1) = 6 în RT, then RT→window(1) + scanlines(1) + vignette(1) + glitch(max 1) = ≤ 10 total
+---
+
+## WAVE 2 — GP + AI + REN (paralel) ✅ (REN:03 pending)
+
+### GP:05 — Toate Armele (5 noi + rework PHANTOM-9)
+**Fișiere modificate:** `src/player/WeaponConfig.h`, `src/player/WeaponSystem.h/.cpp`
+
+`WeaponConfig.h` — adaugă constexpr pentru fiecare armă:
+```
+PHANTOM-9    : BURST_MODE toggle (Q), silenced (SoundEmitted radius=0)
+STATIC SMG   : 600rpm, spread 8°, pool 1024, SoundEmitted radius 400px
+RAILGUN MK2  : 1 glonț, penetrare infinită pereți dacă hackChargeActive, cooldown 2s
+VOID SHOTGUN : 8 pellets, spread 30°, knockback 400px/s pe inamici, range 250px
+EMP GRENADE  : proiectil arcuit (parabolă), raza 180px, disable drone/cyborg 5s
+NEURAL SPIKE : proiectil slow, la hit → EnemyHackedEvent (ZERO controlează 3s)
+```
+
+`WeaponSystem`:
+- `enum class WeaponType { PHANTOM9, STATIC_SMG, RAILGUN, VOID_SHOTGUN, EMP_GRENADE, NEURAL_SPIKE }`
+- `struct WeaponSlot { WeaponType type; int ammo; float cooldownLeft; bool burstMode; }`
+- Player are slot activ, ciclat cu scroll wheel / taste 1-6
+- EMP: spawn proiectil cu viteză+gravitate → la impact emit `EMPDetonatedEvent { x, y, radius }`
+- Neural Spike: spawn proiectil lent → hit → emit `EnemyHackedEvent`, ZERO intră în control mode 3s
+- Railgun: raycast extins (ignoră `isSolid=false` tiles dacă hackChargeActive) → damage toate entitățile pe traiectorie
+- Emit `SoundEmittedEvent` la fiecare împușcătură (raze diferite per armă, 0 pentru PHANTOM-9 silenced)
+
+### AI:01 — Toate Tipurile de Inamici (7 noi)
+**Fișiere noi:** `src/enemies/EnemyTypes.h`
+**Fișiere modificate:** `src/enemies/EnemyConfig.h`, `src/enemies/AIStateMachine.h/.cpp`, `src/enemies/EnemyManager.h/.cpp`
+
+`EnemyTypes.h`:
+```cpp
+enum class EnemyType {
+    SCOUT, ENFORCER, SHIELD, SNIPER, HACKER, HEAVY, DRONE, CYBORG_ELITE
+};
+```
+
+`EnemyConfig.h` — constexpr per tip:
+```
+ENFORCER  : HP 80, armor 0.5x dmg frontal, cover-seeker, flanking
+SHIELD    : HP 100, scut față (0 dmg față, full dmg flanc/spate), slow
+SNIPER    : HP 40, laser sight, 1-shot 60dmg, re-aim 2.5s, pozitii înalte
+HACKER    : HP 50, blochează Neural Override în raza 200px, nu atacă
+HEAVY     : HP 200, minigun 800rpm spread 15°, viteză 60%, distruge cover
+DRONE     : HP 20, aerian (fără NavMesh), EMP = instant kill, patrol 360°
+CYBORG_ELITE: HP 350, 3 faze — stub în Sprint 4, complet în Sprint 5
+```
+
+`AIStateMachine` — extensii per tip:
+- **ENFORCER**: COMBAT → caută nearest cover point, trage din cover, flanchează dacă 2+ COMBAT
+- **SHIELD**: COMBAT → avansează spre player, scut activ față; rotire la atacuri laterale
+- **SNIPER**: laser sight activ dacă LOS; trage după 1.5s aim-time; stă pe waypoints înalte
+- **HACKER**: rămâne în spate, emit `HackBlockedEvent` dacă ZERO HACK state în raza 200px
+- **HEAVY**: spray continuu în COMBAT, emit `BulletHitCoverEvent` când lovește cover
+- **DRONE**: waypoints aeriene directe (Velocity-based), detectare 360°, nu are `NavMeshAgent`
+- **CYBORG_ELITE**: stub COMBAT — trage ca ENFORCER, HP 350; faze în Sprint 5
+
+`EnemyManager` — `spawnEnemy(EnemyType, x, y)` factory; atribuie componente corespunzătoare
+
+### GP:06 — Stealth System
+**Fișiere noi:** `src/player/StealthSystem.cpp/.h`
+**Fișiere modificate:** `src/enemies/AIStateMachine.cpp`, `src/rendering/Renderer.cpp`
+
+- **Cone of vision**: fiecare frame → max 8 LOS raycasts distribuite round-robin (`enemyIdx % 8`)
+- Check: `dot(toPlayer, facingDir) > cos(halfAngle)` AND `dist < range` AND raycast passes → `PlayerSpottedEvent`
+- **Hearing**: la `SoundEmittedEvent` → toți inamicii în raza → `alertedBySound=true` → ALERT, mers la sursă
+- **Corpuri**: la `EnemyDiedEvent` → `StealthBody { isCorpse=true }`. Inamic cu LOS la corp → `CorpseFoundEvent` → AlertSystem +1
+- **Silent takedown [F]**: `dot(playerFacing, enemyFacing) > 0.7` AND `dist < 48px` → `TakedownEvent` → instant kill, fără sunet
+- `renderCones(SpriteBatch&)`: triangles semi-transparente cyan (#00FFEE40), roșii în ALERT/COMBAT
+
+### REN:03 — Laser Sight + Visual Stealth Indicators
+**Fișiere modificate:** `src/rendering/Renderer.cpp/.h`
+
+- Laser sight SNIPER: linie roșie (#FF003880) de la enemy la primul hit point; pulsează alpha 0.4→0.9 la 2Hz
+- Cone of vision overlay: triangles per inamic în același batch
+- Weapon slot HUD: icoane 1-6 stânga-jos, activă luminoasă cyan, inactive dim (#6080A0)
+- Hack blocked indicator: `[OVERRIDE BLOCKED]` roșu pulsând dacă HACKER în raza
 
 ---
 
-## WAVE 2 — GP + AI (paralel cu WAVE 1)
+## WAVE 3 — UI (Hacking Minigame) + LVL (1-2, 1-3)
 
-### GP:03 — HackSystem
-**Fișiere noi:** `src/player/HackSystem.cpp/.h`
-- Press E în raza `HACK_INTERACT_RANGE=80px` de un `HackableTag` entity nehackit
-- `m_hacking=true`, `m_hackTimer=HACK_TIER1_DURATION=3.0s`
-- Countdown → emit `HackSuccessEvent`, marchează `hackable.hacked=true`
-- Expune `isHacking()`, `hackProgress()` (0→1), `hackIntensity()` (1.0→0.2 în 0.3s)
+### UI:03 — Hacking Minigame Complet (Tier 1/2/3)
+**Fișiere noi:** `src/hacking/HackMinigame.cpp/.h`, `src/hacking/Tier1Sequence.cpp/.h`, `src/hacking/Tier2Circuit.cpp/.h`, `src/hacking/Tier3ICE.cpp/.h`
+**Fișiere modificate:** `src/ui/HackingUI.cpp/.h`, `src/core/GameState.h/.cpp`, `src/core/Game.cpp`
 
-### GP:04 — Enemy Projectile Bullets
-**Fișiere modificate:** `src/enemies/AIStateMachine.cpp`, `src/enemies/EnemyManager.h/.cpp`
+**Arhitectură:**
+```
+HackSystem → detectează tier → emit HackMinigameStartEvent { tier }
+GameState → HACK state (freeze physics + AI)
+HackMinigame::start(tier) → activează tier-ul corect
+HackMinigame::update(dt) → deleghează la tier activ
+HackingUI::render(window) → UI per tier
+```
 
-- `EnemyFireEvent { uint32_t enemyId; float fromX,fromY,dirX,dirY; }` în EventBus.h
-- AIStateMachine: în loc de instant damage → emit `EnemyFireEvent` cu direcție spre player
-- EnemyManager: pool 256 `EnemyBullet` (fixed array), subscrie `EnemyFireEvent`
-- Enemy bullets: roșii (#FF0038), viteza `SCOUT_BULLET_SPEED=300px/s`, maxDist 600px
-- Raycast pentru coliziune; hit player → `PlayerDamagedEvent`; hit wall → deactivate
-- `batchDrawBullets(SpriteBatch&)` pentru Renderer
+**TIER 1 — Sequence Match:**
+- 4 simboluri random din `{ ▲ ■ ● ◆ }` generate la start
+- Afișate 1.5s, then hidden; player tastează secvența (WASD mapate la 4 simboluri)
+- Timer 3.0s vizibil; greșeală = eșec imediat
+- UI: 4 celule violet (#AA00FF), ShareTechMono 32px, timer bar sus
 
----
+**TIER 2 — Circuit Routing:**
+- Grid 5×5 noduri; start = (0,0), end = (4,4); 3–5 noduri blocate random
+- Player navighează cu arrow keys, nu poate intersecta propriul path, nu poate înapoi
+- Timer 8.0s; UI: grid cyan, path trasat în timp real, noduri blocate roșii
 
-## WAVE 3 — UI + LVL
+**TIER 3 — ICE Breaker:**
+- 3 layere de criptare, fiecare cu HP (40/60/80)
+- `Space` rapid-tap = brute force (rapid dar alertă +1 per layer eșuat)
+- `S hold` = scan mode (lent, safe, garantat succes dacă timer OK)
+- Timer 12.0s total; UI: 3 bare stacked, glitch overlay intens, countdown
 
-### UI:02 — HUD Hack Overlay
-**Fișiere modificate:** `src/ui/HUD.h/.cpp`
-- `renderHackOverlay(window, progress)`: text `[HACKING...]` centrat, bară progres violet (#AA00FF)
-- Apelat din Game.cpp când `m_hackSystem.isHacking()`
+**Integrare GameState:**
+- `HACK` state: physicsSystem.update() și aiSystem.update() NU se apelează
+- `HackSuccessEvent` → exit HACK state, efecte hackable (uși, camere, etc.)
+- `HackFailEvent` → AlertSystem::addAlert(+1), spawn reinforcements
 
-### LVL:02 — Terminal hackabil în 1-1.json
-**Fișiere modificate:** `src/world/LevelLoader.h/.cpp`, `assets/levels/1-1.json`
-- Parsează `"hackables"` array din JSON → entități cu `HackableTag` + `Transform` + `Renderable`
-- Terminale = pătrate violet (#AA00FF), 16×24px, layer 8
-- Adaugă un terminal în 1-1.json la tile (8, 19) (lângă spawn player)
+### LVL:03 — Level 1-2 și 1-3
+**Fișiere noi:** `assets/levels/1-2.json`, `assets/levels/1-3.json`
+**Fișiere modificate:** `src/world/LevelLoader.cpp/.h`, `src/world/TriggerSystem.cpp/.h`
+
+**Level 1-2 — "THE UNDERCROFT":**
+- 80×25 tiles (2560×800px), interior abandonat, 3 rute verticale
+- Inamici: 4× ENFORCER, 2× SCOUT, 1× SNIPER (pe platformă înaltă)
+- 2 terminale (Tier 1 și Tier 2); Tier 2 deschide ușa finală
+- 6 cover objects (30 HP), trigger tranziție → 1-3 la tile (78, 12)
+- Ambient: electric hum, picurare apă, fără ploaie
+
+**Level 1-3 — "VEKTOR OUTPOST":**
+- 100×30 tiles (3200×960px), outpost militarizat, neon corporatist
+- Inamici: 3× ENFORCER, 2× SHIELD, 1× SNIPER, 1× HEAVY, 2× DRONE, 1× CYBORG_ELITE
+- 3 terminale (Tier 1/2/3); Tier 3 dezactivează camere + drone de patrulare
+- Weapon pickups: STATIC SMG și VOID SHOTGUN la mijlocul levelului
+- 8 cover objects (unele destroyable de HEAVY)
+- 2 camera regions cu scrolling limitat la boss fight
+- Boss trigger la tile (95, 15) → spawn CYBORG_ELITE + AlertSystem full
+
+**LevelLoader extensii:**
+- `"coverObjects": [{ "x","y","w","h","hp","destroyable" }]` → entități cu `CoverTag + Health`
+- `"weaponPickups": [{ "x","y","weaponType" }]` → entități cu `PickupTag + WeaponType`
+- `"cameraRegions": [{ "xMin","xMax","yMin","yMax" }]` → Camera.setBounds()
+- `"hackables"` include `"tier"` field (1/2/3) → HackMinigame pornește cu tier corect
 
 ---
 
 ## WAVE 4 — BLD + QA
 
-### BLD:03
+### BLD:04
 **Fișiere modificate:** `CMakeLists.txt`
-- Adaugă `src/rendering/ParticleSystem.cpp`, `src/player/HackSystem.cpp`
 
-### QA:03 — Checklist Sprint 3
+Surse noi:
+```
+src/rendering/RagdollSystem.cpp
+src/player/StealthSystem.cpp
+src/hacking/HackMinigame.cpp
+src/hacking/Tier1Sequence.cpp
+src/hacking/Tier2Circuit.cpp
+src/hacking/Tier3ICE.cpp
+src/ui/HackingUI.cpp
+```
 
-| ID | Test |
-|---|---|
-| QA:S3:01 | Build zero warnings/errors `-Wall -Wextra -Wpedantic` |
-| QA:S3:02 | Bullet impact: scântei cyan vizibile pe orice suprafață |
-| QA:S3:03 | Enemy death: blood particles vizibile |
-| QA:S3:04 | Bloom: entitățile bright (ZERO, enemies) au aură de glow |
-| QA:S3:05 | CA: RGB split vizibil 0.8s la damage de la inamic |
-| QA:S3:06 | Enemy fires real bullet (pătrat roșu vizibil traversând ecranul) |
-| QA:S3:07 | Press E lângă terminal: glitch activ, overlay `[HACKING...]`, progres 3s, success |
-| QA:S3:08 | Draw calls ≤ 10 (confirmat în titlu ferestrei) |
-| QA:S3:09 | Zero heap allocs în game loop |
-| QA:S3:10 | FPS ≥ 120 @ 1080p cu 3 SCOUT + particles active |
+### QA:04 — Checklist Sprint 4
+
+| ID | Test | Acceptanță |
+|---|---|---|
+| QA:S4:01 | Build zero warnings `-Wall -Wextra -Wpedantic` | 0 erori, 0 warnings |
+| QA:S4:02 | Ragdoll la moartea oricărui inamic | 6 bodies + joints, 4s lifetime |
+| QA:S4:03 | Toate 6 armele funcționale | Fiecare trage cu mecanica corectă |
+| QA:S4:04 | Scroll weapon slot 1-6 schimbă arma activă | HUD reflectă arma curentă |
+| QA:S4:05 | ENFORCER se ascunde după cover în COMBAT | Caută nearest cover în 0.5s |
+| QA:S4:06 | SNIPER laser sight vizibil, one-shot 60 dmg | Laser roșu + damage corect |
+| QA:S4:07 | SHIELD — 0 dmg față, dmg normal flanc/spate | Testare cu PHANTOM-9 |
+| QA:S4:08 | HEAVY — HP 200, mișcare lentă | Move speed 60% față de SCOUT |
+| QA:S4:09 | DRONE — patrol aerian fără NavMesh, EMP kill instant | EMP grenade kills DRONE |
+| QA:S4:10 | Cone of vision vizibil, detecție corectă | Intru în con → COMBAT |
+| QA:S4:11 | Hearing — împușcătura alertează inamicii în raza | STATIC SMG alertează raza 400px |
+| QA:S4:12 | PHANTOM-9 silenced nu alertează | Inamicii nu reacționează la distanță |
+| QA:S4:13 | Silent takedown [F] din spate instant kill, fără alertă | Nu emit SoundEmittedEvent |
+| QA:S4:14 | Corpse found → AlertSystem +1 | Text `ALERT LVL 2` în HUD |
+| QA:S4:15 | Hacking Tier 1 — secvență 4 simboluri, 3s | Succes + eșec funcționează |
+| QA:S4:16 | Hacking Tier 2 — grid routing 5×5 | Nu poți intersecta propriul path |
+| QA:S4:17 | Hacking Tier 3 — 3 layere ICE, 12s | Brute force = alertă la eșec |
+| QA:S4:18 | 1-2.json se încarcă, tranziție → 1-3 funcțională | Level traversal complet |
+| QA:S4:19 | 1-3.json — CYBORG_ELITE spawn la boss trigger | Mini-boss apare |
+| QA:S4:20 | Cover destroyable de HEAVY | Cover dispare la HP=0 |
+| QA:S4:21 | Weapon pickup din nivel funcționează | Player primește arma |
+| QA:S4:22 | Draw calls ≤ 10 cu toate sistemele active | Confirmat în titlul ferestrei |
+| QA:S4:23 | FPS ≥ 120 @ 1080p cu scenă completă | Profiler confirmat |
+| QA:S4:24 | Zero heap allocs în game loop | Counter = 0 |
 
 ---
 
@@ -111,24 +255,47 @@ Scanlines + Vignette + Glitch → window overlays
 
 | Fișier | Acțiune |
 |---|---|
-| `src/rendering/ParticleSystem.cpp/.h` | **NOU** |
-| `src/player/HackSystem.cpp/.h` | **NOU** |
-| `assets/shaders/neon_glow.frag` | **NOU** |
-| `assets/shaders/glitch.frag` | **NOU** |
-| `src/ecs/Components.h` | MODIFICAT — HackableTag |
-| `src/ecs/World.h` | MODIFICAT — HackableTag component |
-| `src/core/EventBus.h` | MODIFICAT — EnemyFireEvent, HackActivatedEvent |
-| `src/rendering/ShaderManager.h/.cpp` | MODIFICAT — NeonGlow, Glitch |
-| `src/rendering/Renderer.h/.cpp` | MODIFICAT — RenderTexture, particles, effects |
-| `src/enemies/AIStateMachine.cpp` | MODIFICAT — emit EnemyFireEvent |
-| `src/enemies/EnemyManager.h/.cpp` | MODIFICAT — enemy bullet pool |
-| `src/enemies/EnemyConfig.h` | MODIFICAT — bullet constexpr values |
-| `src/ui/HUD.h/.cpp` | MODIFICAT — renderHackOverlay |
-| `src/world/LevelLoader.h/.cpp` | MODIFICAT — parse hackables |
-| `assets/levels/1-1.json` | MODIFICAT — hackable terminal |
-| `src/core/Game.cpp` | MODIFICAT — HackSystem, ParticleSystem, CA timer, effects |
-| `CMakeLists.txt` | MODIFICAT — 2 surse noi |
+| `src/rendering/RagdollSystem.cpp/.h` | **NOU** |
+| `src/player/StealthSystem.cpp/.h` | **NOU** |
+| `src/hacking/HackMinigame.cpp/.h` | **NOU** |
+| `src/hacking/Tier1Sequence.cpp/.h` | **NOU** |
+| `src/hacking/Tier2Circuit.cpp/.h` | **NOU** |
+| `src/hacking/Tier3ICE.cpp/.h` | **NOU** |
+| `src/enemies/EnemyTypes.h` | **NOU** |
+| `assets/levels/1-2.json` | **NOU** |
+| `assets/levels/1-3.json` | **NOU** |
+| `src/ecs/Components.h` | MODIFICAT — Ragdoll, ConeOfVision, HearingRadius, StealthBody, SilentTakedown |
+| `src/core/EventBus.h` | MODIFICAT — 8 evenimente noi |
+| `src/core/GameState.h/.cpp` | MODIFICAT — HACK freeze logic |
+| `src/core/Game.cpp` | MODIFICAT — RagdollSystem, StealthSystem, HackMinigame |
+| `src/player/WeaponConfig.h` | MODIFICAT — toate 6 arme constexpr |
+| `src/player/WeaponSystem.h/.cpp` | MODIFICAT — WeaponType enum, slot system, 5 mecanici noi |
+| `src/enemies/EnemyConfig.h` | MODIFICAT — toate 8 tipuri constexpr |
+| `src/enemies/EnemyTypes.h` | **NOU** — enum EnemyType |
+| `src/enemies/AIStateMachine.h/.cpp` | MODIFICAT — 6 comportamente noi |
+| `src/enemies/EnemyManager.h/.cpp` | MODIFICAT — factory spawnEnemy(type) |
+| `src/rendering/Renderer.h/.cpp` | MODIFICAT — laser sight, cone overlay, weapon HUD |
+| `src/ui/HackingUI.cpp/.h` | MODIFICAT — render Tier 1/2/3 |
+| `src/world/LevelLoader.h/.cpp` | MODIFICAT — cover, pickups, camera regions, tier hackable |
+| `src/world/TriggerSystem.h/.cpp` | MODIFICAT — boss trigger, level transition |
+| `CMakeLists.txt` | MODIFICAT — 7 surse noi |
 
 ---
 
-**Approval Gate: EXECUTAT**
+## NOTE TEHNICE CRITICE
+
+**Stealth + LOS budget:** Max 8 LOS raycasts/frame (budget CLAUDE.md). Cu 8+ inamici, distribuim round-robin: `enemyIdx % 8` per frame. ConeOfVision update în `StealthSystem::update()`, nu în AIStateMachine.
+
+**Drone fără NavMesh:** DRONE nu are `NavMeshAgent`. Mișcare directă prin `Velocity` pe waypoints aeriene. Physics body = sensor (fără coliziune cu tiles), colizionează doar cu `PlayerBody`.
+
+**HACKER block:** `HackSystem` verifică fiecare frame dacă există HACKER activ în raza 200px. Dacă da, `m_blocked=true` → minigame nu pornește + overlay "BLOCKED".
+
+**Weapon slots vs pool:** Bullet pool 1024 shared. Enemy bullets 256. EMP și Neural Spike = proiectile în pool-ul de bullets cu `BulletType` flag pentru comportament special.
+
+**GameState HACK freeze:** Când `GameState == HACK`, physicsSystem și aiSystem NU se apelează. Doar `hackMinigame.update()` și `hackingUI.render()`. Camera rămâne fixă.
+
+**Cover HP:** Cover objects au `Health` component existent. La `BulletHitEvent` pe cover entity → `CombatSystem` scade HP. La `Health.current == 0` → `CoverDestroyedEvent` → body Box2D removes, entity deactivate.
+
+---
+
+**Approval Gate: PENDING**

@@ -181,6 +181,51 @@ Dark cyberpunk neon-noir. Culori dominante: **negru profund, cyan electric, mage
 - Jetpack → glow albastru + fum termic
 - Rain → 500–2000 particule, coliziune cu suprafețe
 
+### Sprite Production — PB2 Style
+
+**Stil:** Plasma Burst 2 — clean outlines (1-2px), flat shading cu maxim 4 culori per zonă, fără textură organică, fără brush strokes. Vector-like illustration exportat ca raster PNG cu transparență.
+
+**Workflow:**
+```
+Concept (Gemini / manual) → curățare în Affinity Designer / Photoshop
+→ export PNG transparent → TexturePacker atlas → SFML setSmooth(true)
+```
+
+**Canvas de lucru:** 2048×2048 per personaj (precizie la desenat, export la dimensiunea finală).
+
+**Dimensiuni export (runtime PNG):**
+
+| Personaj | Export (native) | On-screen @ 1080p |
+|---|---|---|
+| ZERO | 512×512 | ~160px |
+| SCOUT | 384×384 | ~110px |
+| ENFORCER | 384×384 | ~120px |
+| SHIELD | 512×512 | ~130px |
+| SNIPER | 384×384 | ~125px |
+| HACKER | 256×256 | ~100px |
+| HEAVY | 512×512 | ~170px |
+| DRONE | 384×256 (landscape) | ~90px |
+| CYBORG ELITE | 512×512 | ~200px |
+| Arme (separate) | 256×128 | ~80px |
+
+**Paleta per personaj** (din cele 10 culori canonice):
+
+| Personaj | Bază armură | Accent neon | Detaliu |
+|---|---|---|---|
+| ZERO | `#0A1020` + `#1A2840` | `#00FFEE` trim | glugă `#050810` |
+| SCOUT | `#1A2840` | `#FF006B` trim | vizieră `#00FFEE` |
+| ENFORCER | `#1A2840` vest | `#FF006B` | `#6080A0` detalii |
+| SHIELD | `#050810` scut | `#FFE600` avertizare | `#1A2840` corp |
+| SNIPER | `#050810` | `#FF0038` laser dot | scope `#6080A0` |
+| HACKER | `#0A1020` civilian | `#AA00FF` device | `#6080A0` |
+| HEAVY | `#1A2840` gros | `#FF0038` + `#FFE600` | minigun `#6080A0` |
+| DRONE | `#050810` | `#00FFEE` rotoare | `#FF006B` sensor |
+| CYBORG ELITE | `#0A1020` + `#6080A0` metal | `#AA00FF` augmentări | `#FF0038` eye |
+
+**Silhouette rules:** Fiecare personaj recognoscibil ca silhouette solid negru. Element definitoriu per tip: ZERO=glugă forward-lean, SHIELD=scut rectangular, HEAVY=minigun pe umăr, DRONE=formă hexagon cu rotoare, CYBORG ELITE=braț mecanic proeminent.
+
+**SFML runtime:** `texture.setSmooth(true)`, scale calculat la spawn: `scale = targetHeight / nativeHeight`, setat o dată — zero cost în hot path.
+
 ---
 
 ## 06. TECHNICAL ARCHITECTURE

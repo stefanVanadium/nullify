@@ -1,6 +1,7 @@
 #include "EnemyManager.h"
 #include "AIStateMachine.h"
 #include "ecs/Components.h"
+#include "player/WeaponConfig.h"
 #include <cmath>
 #include <algorithm>
 
@@ -17,12 +18,15 @@ EnemyManager::EnemyManager(World& world, PhysicsSystem& physics)
         [this](const EnemyDiedEvent& e) { onEnemyDied(e); });
     m_enemyFireHandle = EventBus::on<EnemyFireEvent>(
         [this](const EnemyFireEvent& e) { onEnemyFire(e); });
+    m_empHandle = EventBus::on<EMPDetonatedEvent>(
+        [this](const EMPDetonatedEvent& e) { onEMPDetonated(e); });
 }
 
 EnemyManager::~EnemyManager() {
     EventBus::unsubscribe<BulletHitEvent>(m_bulletHitHandle);
     EventBus::unsubscribe<EnemyDiedEvent>(m_enemyDiedHandle);
     EventBus::unsubscribe<EnemyFireEvent>(m_enemyFireHandle);
+    EventBus::unsubscribe<EMPDetonatedEvent>(m_empHandle);
 }
 
 void EnemyManager::buildNavMesh(const std::vector<std::vector<int>>& collision,
@@ -30,34 +34,81 @@ void EnemyManager::buildNavMesh(const std::vector<std::vector<int>>& collision,
     m_navMesh.build(collision, width, height, tileSize);
 }
 
-uint32_t EnemyManager::spawnScout(float x, float y, const WaypointPath& waypoints) {
+uint32_t EnemyManager::spawnEnemy(EnemyType type, float x, float y,
+                                   const WaypointPath& waypoints) {
     if (m_count >= EnemyConfig::MAX_ENEMIES) return static_cast<uint32_t>(MAX_ENTITIES);
+
+    // Per-type config
+    struct TypeCfg { int hp; float w, h; sf::Color col; };
+    auto cfg = [&]() -> TypeCfg {
+        switch (type) {
+            case EnemyType::ENFORCER:
+                return { EnemyConfig::ENFORCER_HP, EnemyConfig::ENFORCER_WIDTH, EnemyConfig::ENFORCER_HEIGHT,
+                         sf::Color(0x1A, 0x28, 0x40, 0xFF) };
+            case EnemyType::SHIELD:
+                return { EnemyConfig::SHIELD_HP, EnemyConfig::SHIELD_WIDTH, EnemyConfig::SHIELD_HEIGHT,
+                         sf::Color(0xFF, 0xE6, 0x00, 0xFF) };
+            case EnemyType::SNIPER:
+                return { EnemyConfig::SNIPER_HP, EnemyConfig::SNIPER_WIDTH, EnemyConfig::SNIPER_HEIGHT,
+                         sf::Color(0x60, 0x80, 0xA0, 0xFF) };
+            case EnemyType::HACKER:
+                return { EnemyConfig::HACKER_HP, EnemyConfig::HACKER_WIDTH, EnemyConfig::HACKER_HEIGHT,
+                         sf::Color(0xAA, 0x00, 0xFF, 0xFF) };
+            case EnemyType::HEAVY:
+                return { EnemyConfig::HEAVY_HP, EnemyConfig::HEAVY_WIDTH, EnemyConfig::HEAVY_HEIGHT,
+                         sf::Color(0xFF, 0x00, 0x38, 0xFF) };
+            case EnemyType::DRONE:
+                return { EnemyConfig::DRONE_HP, EnemyConfig::DRONE_WIDTH, EnemyConfig::DRONE_HEIGHT,
+                         sf::Color(0x00, 0xFF, 0xEE, 0xCC) };
+            case EnemyType::CYBORG_ELITE:
+                return { EnemyConfig::ELITE_HP, EnemyConfig::ELITE_WIDTH, EnemyConfig::ELITE_HEIGHT,
+                         sf::Color(0xAA, 0x00, 0xFF, 0xFF) };
+            default: // SCOUT
+                return { EnemyConfig::SCOUT_HP, EnemyConfig::SCOUT_WIDTH, EnemyConfig::SCOUT_HEIGHT,
+                         sf::Color(0xFF, 0x00, 0x6B, 0xFF) };
+        }
+    }();
 
     uint32_t id = m_world.createEntity();
 
-    Transform t{};
-    t.x = x; t.y = y; t.prevX = x; t.prevY = y;
+    Transform t{}; t.x = x; t.y = y; t.prevX = x; t.prevY = y;
     m_world.addComponent<Transform>(id, std::move(t));
-
     m_world.addComponent<Velocity>(id, Velocity{});
-    m_world.addComponent<Health>(id, Health{ EnemyConfig::SCOUT_HP, EnemyConfig::SCOUT_HP });
+    m_world.addComponent<Health>(id, Health{ cfg.hp, cfg.hp });
 
     Renderable r;
-    r.size  = { EnemyConfig::SCOUT_WIDTH, EnemyConfig::SCOUT_HEIGHT };
-    r.color = sf::Color(0xFF, 0x00, 0x6B, 0xFF);
+    r.size  = { cfg.w, cfg.h };
+    r.color = cfg.col;
     r.layer = 9;
     m_world.addComponent<Renderable>(id, std::move(r));
 
-    b2Body* body = m_physics.createDynamicBody(x, y, EnemyConfig::SCOUT_WIDTH, EnemyConfig::SCOUT_HEIGHT);
-    Collidable c{}; c.body = body; c.w = EnemyConfig::SCOUT_WIDTH; c.h = EnemyConfig::SCOUT_HEIGHT;
+    b2Body* body = m_physics.createDynamicBody(x, y, cfg.w, cfg.h);
+    // Drone: sensor body (no tile collision)
+    if (type == EnemyType::DRONE && body) {
+        for (b2Fixture* f = body->GetFixtureList(); f; f = f->GetNext())
+            f->SetSensor(true);
+        body->SetGravityScale(0.f);
+    }
+    Collidable c{}; c.body = body; c.w = cfg.w; c.h = cfg.h;
     m_world.addComponent<Collidable>(id, std::move(c));
 
-    m_world.addComponent<EnemyTag>(id, EnemyTag{ EnemyType::SCOUT });
+    m_world.addComponent<EnemyTag>(id, EnemyTag{ type });
     m_world.addComponent<AIState>(id, AIState{});
     m_world.addComponent<WaypointPath>(id, WaypointPath(waypoints));
 
+    // Add perception components for stealth system
+    ConeOfVision cov{};
+    m_world.addComponent<ConeOfVision>(id, std::move(cov));
+    m_world.addComponent<HearingRadius>(id, HearingRadius{});
+    m_world.addComponent<StealthBody>(id, StealthBody{});
+    m_world.addComponent<SilentTakedown>(id, SilentTakedown{});
+
     m_entities[static_cast<size_t>(m_count++)] = id;
     return id;
+}
+
+uint32_t EnemyManager::spawnScout(float x, float y, const WaypointPath& waypoints) {
+    return spawnEnemy(EnemyType::SCOUT, x, y, waypoints);
 }
 
 void EnemyManager::update(float dt) {
@@ -180,6 +231,28 @@ void EnemyManager::onBulletHit(const BulletHitEvent& e) {
 }
 
 void EnemyManager::onEnemyDied(const EnemyDiedEvent&) {}
+
+void EnemyManager::onEMPDetonated(const EMPDetonatedEvent& e) {
+    for (int i = 0; i < m_count; ++i) {
+        uint32_t eid = m_entities[static_cast<size_t>(i)];
+        if (!m_world.isAlive(eid) || !m_world.hasComponent<Transform>(eid)) continue;
+        const auto& tf = m_world.getComponent<Transform>(eid);
+        float dx = tf.x - e.x, dy = tf.y - e.y;
+        if (dx*dx + dy*dy > e.radius * e.radius) continue;
+
+        // Only affects electronic types
+        EnemyType et = m_world.hasComponent<EnemyTag>(eid)
+                     ? m_world.getComponent<EnemyTag>(eid).type
+                     : EnemyType::SCOUT;
+        if (et == EnemyType::DRONE || et == EnemyType::CYBORG_ELITE) {
+            if (m_world.hasComponent<AIState>(eid)) {
+                auto& ai = m_world.getComponent<AIState>(eid);
+                ai.empDisabled = true;
+                ai.empTimer    = WeaponConfig::EMP_DISABLE_DUR;
+            }
+        }
+    }
+}
 
 void EnemyManager::onEnemyFire(const EnemyFireEvent& e) {
     EnemyBullet& b = m_enemyBullets[m_nextBulletSlot];
